@@ -11,7 +11,7 @@ import { getPublicAssetUrl } from '@/lib/supabase/storage';
 import AppLaunch from '@/components/pwa/AppLaunch';
 import AppNotifications from '@/components/feedback/AppNotifications';
 
-const favicon = getPublicAssetUrl('ob-brokers-team/brand/ob-brokers-team-isotype-blue.png');
+const favicon = '/brand/logo-isotype-blue.png';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 // Editorial serif for headlines — echoes the serif "OB" wordmark in the brand

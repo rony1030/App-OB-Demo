@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith('/login') ||
         pathname.startsWith('/portal') ||
         pathname.startsWith('/auth') ||
-        pathname.startsWith('/api');
+        pathname.startsWith('/api') || pathname === '/manifest.json';
 
       if (!isAllowedDemo) {
         const url = request.nextUrl.clone();
@@ -177,6 +177,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|app-icons/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|app-icons/|favicon.ico|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json)$).*)',
   ],
 };

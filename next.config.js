@@ -17,7 +17,7 @@ const nextConfig = {
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://plus.unsplash.com https://osvaldobello.com https://*.osvaldobello.com https://canarock.info https://*.canarock.info https://canabay.com.do; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" },
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://plus.unsplash.com https://osvaldobello.com https://*.osvaldobello.com https://canarock.info https://*.canarock.info https://canabay.com.do; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
