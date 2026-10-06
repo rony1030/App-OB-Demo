@@ -1,0 +1,34 @@
+-- Requirements are configured per master broker and optionally per project.
+-- An empty set means the issuer has not imposed additional requirements yet.
+create table if not exists public.agreement_document_requirements (
+  id bigint generated always as identity primary key,
+  master_broker_organization_id bigint not null references public.organizations(id) on delete cascade,
+  project_id bigint references public.projects(id) on delete cascade,
+  document_type text not null check (document_type in ('rnc','mercantile_registry','tax_certificate','legal_representative_id','banking','license','id_card','insurance','other')),
+  label text,
+  is_required boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (master_broker_organization_id, project_id, document_type)
+);
+alter table public.agreement_document_requirements enable row level security;
+create policy agreement_requirements_select on public.agreement_document_requirements for select to authenticated
+  using ((select private.has_org_role(master_broker_organization_id, null)) or exists (select 1 from public.agreements a where a.master_broker_organization_id = agreement_document_requirements.master_broker_organization_id and a.project_id is not distinct from agreement_document_requirements.project_id and (select private.has_org_role(a.broker_organization_id, null))));
+create policy agreement_requirements_manage on public.agreement_document_requirements for all to authenticated
+  using ((select private.has_org_role(master_broker_organization_id, array['super_admin','master_broker_admin','master_broker_operations']::text[])))
+  with check ((select private.has_org_role(master_broker_organization_id, array['super_admin','master_broker_admin','master_broker_operations']::text[])));
+
+create table if not exists public.agreement_notification_recipients (
+  id bigint generated always as identity primary key,
+  organization_id bigint not null references public.organizations(id) on delete cascade,
+  email text not null check (position('@' in email) > 1),
+  label text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (organization_id, email)
+);
+alter table public.agreement_notification_recipients enable row level security;
+create policy agreement_recipients_select on public.agreement_notification_recipients for select to authenticated
+  using ((select private.has_org_role(organization_id, array['super_admin','master_broker_admin','master_broker_operations']::text[])));
+create policy agreement_recipients_manage on public.agreement_notification_recipients for all to authenticated
+  using ((select private.has_org_role(organization_id, array['super_admin','master_broker_admin']::text[])))
+  with check ((select private.has_org_role(organization_id, array['super_admin','master_broker_admin']::text[])));

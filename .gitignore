@@ -1,0 +1,42 @@
+# Dependencies
+/node_modules
+
+# Next.js build output
+/.next
+/out
+
+# Production builds
+/build
+
+# Local environment files
+.env*
+!.env.example
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+.claude
+*.swp
+/projects
+/storage-export
+.codex-remote-attachments
+/tmp
+
+# Heavy Paridera render video: served from Supabase Storage (public-assets/projects/sunrise-bonita-beach/video/)
+/public/paridera/sunrise/video/*.mp4
+/scratch

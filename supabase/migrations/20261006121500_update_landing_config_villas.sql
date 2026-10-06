@@ -1,0 +1,3 @@
+UPDATE public.project_media
+SET alt_text = '{"hero": {"ctaText": "Ver disponibilidad", "headline": "Villas en Punta Cana", "badgeText": "", "subheadline": "Diecinueve villas exclusivas con piscina privada en Punta Cana.", "startingPriceText": "Desde USD 450,000"}, "theme": {"logoUrl": "/paridera/hub/logo-h-blue.png", "fontPreset": "luxury", "accentColor": "#F5C85B", "contactEmail": "soporte@osvaldobello.com", "heroMediaUrl": "/paridera/villas/villa-01.jpg", "primaryColor": "#0A2A3B", "heroMediaType": "image", "contactWhatsapp": "18296391841", "experiencePreset": "paridera-bonita-beach"}, "projectId": 39, "isPublished": true, "projectSlug": "villas-en-punta-cana"}'
+WHERE project_id = 39 AND kind = 'landing_config';

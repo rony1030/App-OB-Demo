@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WR4N2R4N');</script>
+    <!-- End Google Tag Manager -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WP5HN8RYS9"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WP5HN8RYS9');
+    </script>
+    <!-- End Google tag (gtag.js) -->
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/assets/isotipo-elemental.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo192_v3.png" />
+    <title>Elements CRM</title>
+    <script>
+      // Capture PWA install prompt before browser hides it
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+      });
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            // Auto reload when update is installed and active
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              if (installingWorker == null) return;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    window.location.reload();
+                  }
+                }
+              };
+            };
+          }).catch(err => {
+            console.warn('SW Registration failed:', err);
+          });
+        });
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/index-C5G1xTFw.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-D94mY8_X.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-B1bB6gxt.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-lucide-BKobMYPp.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-fm-CB6LVXZw.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-B9CuU4hK-v21.css">
+  </head>
+  <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WR4N2R4N"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "OB Brokers CRM",
+  "short_name": "OB CRM",
+  "description": "Plataforma de Gestión Comercial y Master Broker Inmobiliario",
+  "start_url": "/portal",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/brand/logo-isotype-blue.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/logo-isotype-blue.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "productivity", "real estate"]
+}

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { canReviewOperationsProject } from '../lib/operations/review-access';
+const project = { id: 10, organizationId: 1 };
+assert.equal(canReviewOperationsProject({ role: 'master_broker_admin', organizationId: 1 }, project, []), true);
+assert.equal(canReviewOperationsProject({ role: 'master_broker_operations', organizationId: 2 }, project, []), false);
+assert.equal(canReviewOperationsProject({ role: 'developer_admin', organizationId: 3 }, project, []), false);
+assert.equal(canReviewOperationsProject({ role: 'developer_viewer', organizationId: 3 }, project, [{ projectId: 10, expiresAt: null }]), true);
+assert.equal(canReviewOperationsProject({ role: 'developer_admin', organizationId: 3 }, project, [{ projectId: 10, expiresAt: '2000-01-01' }]), false);
+assert.equal(canReviewOperationsProject({ role: 'agent', organizationId: 1 }, project, [{ projectId: 10, expiresAt: null }]), false);
+assert.equal(canReviewOperationsProject({ role: 'super_admin', organizationId: 9 }, project, []), true);
+console.log('PASS: 7 private document access checks, including cross-company and expired grants.');

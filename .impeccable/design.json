@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-15T00:00:00-04:00",
+  "title": "Design System: OB Brokers Platform",
+  "extensions": {
+    "colorMeta": {
+      "broker-navy": {
+        "role": "primary",
+        "displayName": "Broker Navy",
+        "canonical": "#0c094e",
+        "tonalRamp": ["#050421", "#0c094e", "#24207a", "#514da0", "#817ec0", "#aaa8d7", "#ddddf4", "#f5f5fc"]
+      },
+      "editorial-gold": {
+        "role": "secondary",
+        "displayName": "Editorial Gold",
+        "canonical": "#8b7657",
+        "tonalRamp": ["#241d14", "#473a29", "#68573f", "#8b7657", "#aa9576", "#c8b79c", "#e4d9c7", "#f8f3eb"]
+      },
+      "portal-canvas": {
+        "role": "neutral",
+        "displayName": "Portal Canvas",
+        "canonical": "#f5f8fc",
+        "tonalRamp": ["#17233a", "#35445d", "#5e6d83", "#8795a8", "#afbac8", "#d5dce6", "#e9eef5", "#f5f8fc"]
+      },
+      "warm-paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#fefdf9",
+        "tonalRamp": ["#25231c", "#4d493d", "#777164", "#a29b8d", "#c8c1b4", "#e5dfd5", "#f5f1e9", "#fefdf9"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Editorial Display",
+        "purpose": "Titulares de dossiers, propuestas y superficies públicas."
+      },
+      "body": {
+        "displayName": "Operational Body",
+        "purpose": "Interfaz, datos, formularios y lectura continua."
+      },
+      "label": {
+        "displayName": "Context Label",
+        "purpose": "Kickers breves y metadatos en mayúsculas."
+      }
+    },
+    "shadows": [
+      {
+        "name": "surface-low",
+        "value": "0 1px 2px rgba(15, 23, 42, 0.06)",
+        "purpose": "Separación mínima de tarjetas y controles."
+      },
+      {
+        "name": "editorial-sheet",
+        "value": "0 18px 34px rgba(15, 23, 42, 0.16)",
+        "purpose": "Elevar la hoja o una imagen editorial sobre el lienzo."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-standard",
+        "value": "320ms ease-out",
+        "purpose": "Entrada breve de superficies del portal y cambios de estado."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ],
+    "components": [
+      {
+        "name": "Primary Button",
+        "kind": "button",
+        "refersTo": "button-primary",
+        "description": "Acción principal del creador o de una tarjeta operativa.",
+        "html": "<button class=\"ds-button-primary\">Guardar y compartir</button>",
+        "css": ".ds-button-primary { height: 40px; border: 0; border-radius: 12px; background: var(--brand-primary, #0c094e); color: #fff; padding: 0 16px; font: 700 12px Inter, system-ui, sans-serif; box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: background .2s, opacity .2s; } .ds-button-primary:hover { background: color-mix(in srgb, var(--brand-primary, #0c094e) 85%, white); } .ds-button-primary:focus-visible { outline: 2px solid var(--brand-primary, #0c094e); outline-offset: 2px; } .ds-button-primary:active { transform: translateY(1px); }"
+      },
+      {
+        "name": "Secondary Button",
+        "kind": "button",
+        "refersTo": "button-secondary",
+        "description": "Acción secundaria como descargar, cambiar o volver.",
+        "html": "<button class=\"ds-button-secondary\">Descargar PDF</button>",
+        "css": ".ds-button-secondary { height: 40px; border: 1px solid #e4ebf5; border-radius: 12px; background: #fff; color: #17233a; padding: 0 16px; font: 700 12px Inter, system-ui, sans-serif; transition: background .2s, border-color .2s; } .ds-button-secondary:hover { background: #f5f8fc; border-color: #cad6e8; } .ds-button-secondary:focus-visible { outline: 2px solid var(--brand-primary, #0c094e); outline-offset: 2px; } .ds-button-secondary:active { background: #e9eef5; }"
+      },
+      {
+        "name": "Search Input",
+        "kind": "input",
+        "refersTo": "input",
+        "description": "Búsqueda y selección de contactos del CRM.",
+        "html": "<input class=\"ds-input\" placeholder=\"Buscar nombre, correo o teléfono\" />",
+        "css": ".ds-input { width: 100%; height: 44px; border: 1px solid #e4ebf5; border-radius: 12px; background: #fff; color: #17233a; padding: 0 16px; font: 400 14px Inter, system-ui, sans-serif; transition: border-color .2s, box-shadow .2s; } .ds-input:hover { border-color: #cad6e8; } .ds-input:focus-visible { border-color: var(--brand-primary, #0c094e); box-shadow: 0 0 0 3px rgba(12,9,78,.1); outline: none; }"
+      },
+      {
+        "name": "Portal Card",
+        "kind": "card",
+        "refersTo": "portal-card",
+        "description": "Agrupa una decisión breve o un resumen operativo.",
+        "html": "<section class=\"ds-card\"><small>DESTINATARIO</small><strong>Contacto del CRM</strong></section>",
+        "css": ".ds-card { display: grid; gap: 8px; border: 1px solid #e4ebf5; border-radius: 16px; background: #fff; color: #17233a; padding: 20px; box-shadow: 0 1px 2px rgba(15,23,42,.06); font-family: Inter, system-ui, sans-serif; } .ds-card small { color: #8b7657; font-size: 10px; font-weight: 700; letter-spacing: .16em; } .ds-card strong { font-size: 16px; }"
+      },
+      {
+        "name": "Proposal Page Dot",
+        "kind": "nav",
+        "refersTo": "proposal-sheet",
+        "description": "Navegación compacta entre las seis páginas de la propuesta.",
+        "html": "<nav class=\"ds-page-dots\" aria-label=\"Páginas\"><button class=\"ds-page-dot ds-page-dot-active\" aria-label=\"Página 1\"></button><button class=\"ds-page-dot\" aria-label=\"Página 2\"></button></nav>",
+        "css": ".ds-page-dots { display: flex; align-items: center; justify-content: center; gap: 8px; } .ds-page-dot { width: 8px; height: 8px; border: 0; border-radius: 999px; background: #cbd5e1; transition: width .2s, background .2s; } .ds-page-dot:hover { background: #94a3b8; } .ds-page-dot:focus-visible { outline: 2px solid #0c094e; outline-offset: 2px; } .ds-page-dot-active { width: 28px; background: #0c094e; }"
+      }
+    ],
+    "narrative": {
+      "northStar": "Editorial inmobiliaria operativa",
+      "overview": "La plataforma combina la precisión de una herramienta comercial con una presentación editorial de alta gama. Las superficies operativas son sobrias, compactas y fáciles de escanear; los dossiers y propuestas conceden más protagonismo a la imagen, la tipografía y la identidad de cada desarrolladora. La marca de OB Brokers enmarca la experiencia, pero no compite con la marca del proyecto.",
+      "keyCharacteristics": [
+        "Navegación y controles en azul marino con superficies blancas.",
+        "Etiquetas pequeñas en mayúsculas para contexto, no para contenido principal.",
+        "Propuestas en papel cálido con composición Carta fija.",
+        "Marca, colores e imágenes del proyecto preservados en cada documento.",
+        "Movimiento breve y funcional, limitado a transiciones de estado."
+      ],
+      "rules": [
+        { "name": "The Project Accent Rule", "body": "En documentos comerciales, el color de la desarrolladora sustituye al acento editorial sin alterar la legibilidad del texto.", "section": "colors" },
+        { "name": "The Two-Voice Rule", "body": "La voz sans-serif explica y opera; la serif presenta y persuade.", "section": "typography" },
+        { "name": "The Fixed Sheet Rule", "body": "Una propuesta debe conservar la misma composición en vista previa, móvil, enlace público y PDF.", "section": "layout" },
+        { "name": "The Guided Flow Rule", "body": "Crear una propuesta es una secuencia de selección, revisión y guardado; la edición libre pertenece exclusivamente al dossier.", "section": "layout" },
+        { "name": "The Quiet Elevation Rule", "body": "Si un borde ya define la superficie, la sombra solo puede aportar separación ambiental, nunca dramatismo.", "section": "elevation" },
+        { "name": "The Honest Image Rule", "body": "La forma de la imagen depende de su función; una imagen a sangre no recibe adornos que alteren su encuadre.", "section": "shapes" }
+      ],
+      "dos": [
+        "Do mantener una sola acción principal visible por bloque.",
+        "Do usar datos oficiales del CRM, inventario y perfil de marca.",
+        "Do probar toda propuesta a 816 × 1056 px y escalada entre 390 y 430 px.",
+        "Do reservar la carga de páginas ocultas para el momento de exportar el PDF."
+      ],
+      "donts": [
+        "Don't usar el editor de bloques del dossier para crear una propuesta.",
+        "Don't permitir propuestas vinculadas a nombres libres fuera del CRM.",
+        "Don't reacomodar internamente una página Carta según el ancho del teléfono.",
+        "Don't colocar adornos de esquina sobre imágenes a pantalla completa.",
+        "Don't mostrar simultáneamente todas las páginas pesadas cuando solo se revisa una."
+      ]
+    }
+  }
+}

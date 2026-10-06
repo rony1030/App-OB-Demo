@@ -1,0 +1,3 @@
+-- A unit hold is an operational milestone, not the end of the commercial
+-- opportunity. Existing records are intentionally left untouched: each must
+-- be reviewed before changing its commercial stage.
