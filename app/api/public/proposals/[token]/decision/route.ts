@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { updateDemoProposalByToken } from '@/lib/demo/local-crm-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,19 @@ export async function POST(
 
     if (body.decision !== 'accepted' && body.decision !== 'rejected') {
       return NextResponse.json({ error: 'Selecciona una respuesta válida.' }, { status: 400 });
+    }
+
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      let alreadyRecorded = false;
+      const updated = await updateDemoProposalByToken(token, (proposal) => {
+        if (proposal.decision) {
+          alreadyRecorded = true;
+          return proposal;
+        }
+        return { ...proposal, decision: body.decision as 'accepted' | 'rejected', decisionComment: body.comment?.trim().slice(0, 2000) || '' };
+      });
+      if (!updated) return NextResponse.json({ error: 'Enlace no disponible.' }, { status: 404 });
+      return NextResponse.json({ decision: body.decision, alreadyRecorded });
     }
 
     const supabase = createAdminClient();

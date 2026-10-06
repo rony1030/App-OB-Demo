@@ -58,7 +58,7 @@ const DEMOS = [
 ];
 
 export default async function InvestorDemoPage() {
-  const isUnlocked = await hasDemoAccess();
+  const isUnlocked = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' || await hasDemoAccess();
 
   return (
     <div className="min-h-screen bg-[#F5F8FC] text-[#101826]">
@@ -68,9 +68,6 @@ export default async function InvestorDemoPage() {
             <Link href="/inversionista" className="shrink-0 transition-opacity hover:opacity-90">
               <Image src="/brand/ob-brokers-horizontal-azul-recortado.png" alt="OB Brokers" width={160} height={64} priority className="h-9 sm:h-10 w-auto" />
             </Link>
-            <span className="hidden sm:inline-block rounded-full bg-[#E8E8F7] px-3 py-1 text-xs font-semibold text-[#0C094E]">
-              Portal Demo
-            </span>
           </div>
           <Link
             href="/inversionista"

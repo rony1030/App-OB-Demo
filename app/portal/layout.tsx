@@ -60,6 +60,26 @@ async function getPortalBrandTheme(
 }
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const { cookies } = await import('next/headers');
+    const { redirect } = await import('next/navigation');
+    const cookieStore = await cookies();
+    if (!cookieStore.get('demo_auth_session')) redirect('/login?next=/portal');
+    const { DEMO_USER } = await import('@/lib/demo/mock-store');
+    const { BrandProvider } = await import('@/components/branding/BrandProvider');
+    const { DEFAULT_BRAND } = await import('@/types/branding');
+    const { default: DemoPortalShell } = await import('@/components/portal/PortalShell');
+    return (
+      <BrandProvider initialTheme={{ ...DEFAULT_BRAND, name: 'OB Brokers Demo', logo_url: '/brand/ob-brokers-horizontal-azul-recortado.png' }}>
+        <DemoPortalShell currentUser={{
+          ...DEMO_USER, phone: null, avatarUrl: null, professionalTitle: 'Master Broker Director',
+          instagramUrl: null, facebookUrl: null, linkedinUrl: null, tiktokUrl: null, websiteUrl: null,
+          realRole: DEMO_USER.role, isPreviewMode: false,
+          availableMemberships: [{ id: DEMO_USER.membershipId, role: DEMO_USER.role, isPrimary: true, organization: DEMO_USER.organization }],
+        }}>{children}</DemoPortalShell>
+      </BrandProvider>
+    );
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (currentUser) {

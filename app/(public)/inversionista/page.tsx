@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { MessageCircle, ShieldCheck } from 'lucide-react';
 import AccessForm from '@/components/portal/investor/AccessForm';
+import { DEMO_CLIENTS } from '@/lib/data/investor-demo';
 
 export const metadata: Metadata = {
   title: 'Acceso para inversionistas | OB Brokers',
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function InvestorAccessPage() {
+  const isDemo = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';
   return (
     <div className="min-h-screen bg-[#F5F8FC] text-[#101826]">
       <header className="sticky top-0 z-50 border-b border-[#DCE3EE] bg-white/95 backdrop-blur-md shadow-sm supports-[backdrop-filter]:bg-white/85 transition-all">
@@ -43,24 +45,25 @@ export default function InvestorAccessPage() {
 
               <div className="mt-8 flex items-center gap-3 text-xs text-[#C7CBEA]">
                 <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
-                <span>Acceso confidencial protegido sin contraseñas mediante código OTP de verificación.</span>
+              <span>{isDemo ? 'Acceso local de demostración mediante código OTP simulado; no se envían correos.' : 'Acceso confidencial protegido sin contraseñas mediante código OTP de verificación.'}</span>
               </div>
             </div>
 
             <div className="rounded-xl bg-white p-6 text-[#101826] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.5)] sm:p-8">
               <h2 className="font-display text-2xl">Acceda a su portal</h2>
-              <p className="mt-1 mb-6 text-sm text-[#5B6472]">Ingrese el correo registrado en su expediente de compra.</p>
+              <p className="mt-1 mb-6 text-sm text-[#5B6472]">{isDemo ? 'Use uno de estos perfiles ficticios para iniciar sesión localmente.' : 'Ingrese el correo registrado en su expediente de compra.'}</p>
+              {isDemo && <ul className="mb-5 space-y-1 text-xs text-slate-600">{DEMO_CLIENTS.map((client) => <li key={client.code}><strong>{client.fullName}</strong> · {client.email}</li>)}</ul>}
               <AccessForm />
 
               <div className="mt-6 border-t border-[#E4EBF5] pt-4 text-center">
-                <a
+                {!isDemo && <a
                   href="https://wa.me/18296391841?text=Hola%2C%20necesito%20actualizar%20el%20correo%20de%20mi%20expediente%20de%20inversionista."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-[#24207A] hover:underline"
                 >
                   <MessageCircle className="h-3.5 w-3.5" aria-hidden /> ¿Cambió su correo electrónico? Contacte a soporte
-                </a>
+                </a>}
               </div>
             </div>
           </div>

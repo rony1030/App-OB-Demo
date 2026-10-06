@@ -41,7 +41,7 @@ export default async function InvestorPortalPage(props: {
 
   // Caso 1: Código de Demostración
   if (findDemoClient(cleanCode)) {
-    const isUnlocked = await hasDemoAccess();
+    const isUnlocked = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' || await hasDemoAccess();
     if (!isUnlocked) {
       // Si intentan entrar a un código demo sin clave demo, redirigir a /inversionista/demo
       redirect('/inversionista/demo');

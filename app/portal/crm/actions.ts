@@ -1,6 +1,7 @@
 'use server';
 
-import { addDemoContact } from '@/lib/demo/local-crm-store';
+import { getDemoContactsPersistent, saveDemoContact } from '@/lib/demo/local-crm-store';
+import { updateDemoState } from '@/lib/demo/local-store';
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
@@ -36,7 +37,7 @@ export async function createLeadAction(formData: FormData): Promise<ActionRespon
     const id = Date.now();
     const publicCode = 'CLI-' + Math.floor(1000 + Math.random() * 9000);
     const nameParts = name.split(' ');
-    addDemoContact({
+    await saveDemoContact({
       id,
       firstName: nameParts[0] || name,
       lastName: nameParts.slice(1).join(' ') || null,
@@ -342,6 +343,14 @@ export async function createLeadAction(formData: FormData): Promise<ActionRespon
 
 export async function addContactNoteAction(contactId: number, body: string): Promise<ActionResponse> {
   if (!body.trim()) return { error: 'El contenido de la nota no puede estar vacío.' };
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    await updateDemoState((state) => {
+      const detail = state.contactDetails[String(contactId)] ??= { notes: [], activities: [] };
+      detail.notes.unshift({ id: Date.now(), body: body.trim(), createdAt: new Date().toISOString(), createdByName: 'Soporte OB Brokers' });
+    });
+    revalidatePath('/portal/clientes', 'layout');
+    return { success: true };
+  }
 
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -368,6 +377,14 @@ export async function addContactActivityAction(
   dueAt?: string
 ): Promise<ActionResponse> {
   if (!subject.trim()) return { error: 'El asunto es obligatorio.' };
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    await updateDemoState((state) => {
+      const detail = state.contactDetails[String(contactId)] ??= { notes: [], activities: [] };
+      detail.activities.unshift({ id: Date.now(), kind, subject: subject.trim(), details: details?.trim() || null, dueAt: dueAt || null, completedAt: kind === 'task' ? null : new Date().toISOString(), createdAt: new Date().toISOString() });
+    });
+    revalidatePath('/portal/clientes', 'layout');
+    return { success: true };
+  }
 
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -391,6 +408,14 @@ export async function addContactActivityAction(
 }
 
 export async function toggleTaskCompleteAction(activityId: number, contactId: number, completed: boolean): Promise<ActionResponse> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    await updateDemoState((state) => {
+      const activity = state.contactDetails[String(contactId)]?.activities.find((entry) => entry.id === activityId);
+      if (activity) activity.completedAt = completed ? new Date().toISOString() : null;
+    });
+    revalidatePath('/portal/clientes', 'layout');
+    return { success: true };
+  }
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -407,6 +432,18 @@ export async function toggleTaskCompleteAction(activityId: number, contactId: nu
 export async function updateOpportunityStageAction(opportunityId: number, stage: string, contactId?: number): Promise<ActionResponse> {
   if (stage === 'won') {
     return { error: 'El cierre ganado se confirma desde el expediente de venta, después de validar contrato y el pago inicial.' };
+  }
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const contacts = await getDemoContactsPersistent();
+    const contact = contacts.find((entry) => entry.id === contactId || entry.primaryOpportunity?.id === opportunityId);
+    if (!contact) return { error: 'Negociación demo no encontrada.' };
+    await updateDemoState((state) => {
+      const detail = state.contactDetails[String(contact.id)] ??= { notes: [], activities: [] };
+      detail.stage = stage;
+    });
+    revalidatePath('/portal/leads');
+    revalidatePath('/portal/clientes');
+    return { success: true };
   }
   const supabase = await createClient();
 

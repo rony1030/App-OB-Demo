@@ -7,6 +7,7 @@ import MultiPropertyProposalViewer from '@/components/proposals/MultiPropertyPro
 import PublicDossierViewer from '@/components/portal/PublicDossierViewer';
 import type { SlideBlock } from '@/components/portal/PublicDossierViewer';
 import type { MultiPropertyProposal } from '@/types/proposals';
+import { getDemoProposalsPersistent, updateDemoProposalByToken } from '@/lib/demo/local-crm-store';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPublicAssetUrl } from '@/lib/supabase/storage';
 import { brandPersonalizedBlock } from '@/lib/portal/personalized-dossier-brand';
@@ -33,6 +34,16 @@ export async function generateMetadata(props: {
     title: locale === 'en' ? 'Investment Proposal · OB Brokers Team' : locale === 'fr' ? 'Proposition Commerciale · OB Brokers Team' : 'Propuesta Comercial · OB Brokers Team',
     description: locale === 'en' ? 'Interactive and personalized commercial proposal.' : locale === 'fr' ? 'Proposition commerciale interactive et personnalisée.' : 'Propuesta comercial interactiva y personalizada.',
   };
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const item = (await getDemoProposalsPersistent()).find((proposal) => proposal.sharedToken === token && proposal.status !== 'archived');
+    const snapshot = item?.snapshot as { project?: string; client_name?: string; items?: Array<{ unit_name?: string }> } | undefined;
+    return item ? {
+      title: item.title,
+      description: `${snapshot?.project || item.projectName || 'Proyecto inmobiliario'} · ${snapshot?.client_name || item.clientName || 'Propuesta de demostración'}`,
+      robots: { index: false, follow: false },
+    } : defaultMeta;
+  }
 
   if (!/^[a-f0-9]{40}$/i.test(token)) return defaultMeta;
 
@@ -173,6 +184,29 @@ export default async function PublicProposalPage(props: {
       : headerLocale === 'en' || headerLocale === 'fr'
       ? headerLocale
       : 'es';
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const saved = (await getDemoProposalsPersistent()).find((item) => item.sharedToken === token && item.status !== 'archived');
+    const snapshot = saved?.snapshot as Record<string, unknown> | undefined;
+    const items = Array.isArray(snapshot?.items) ? snapshot.items as MultiPropertyProposal['items'] : [];
+    if (!saved || !items.length) return <LinkUnavailable reason="Verifica que copiaste el enlace completo, o solicita una propuesta nueva a tu asesor." />;
+    const branding = snapshot?.branding as { name?: string; logo_url?: string; primary_color?: string; accent_color?: string; surface_color?: string } | undefined;
+    const proposal: MultiPropertyProposal = {
+      id: String(saved.id), token, title: saved.title,
+      subtitle: typeof snapshot?.subtitle === 'string' ? snapshot.subtitle : undefined,
+      client_name: saved.clientName || 'Cliente de demostración',
+      client_email: undefined, client_phone: undefined,
+      recipient_type: snapshot?.recipient_type === 'company' ? 'company' : 'person',
+      broker_id: '', broker_name: 'Soporte OB Brokers', broker_email: '', broker_phone: '',
+      agency_name: branding?.name || 'OB Brokers', agency_logo: branding?.logo_url,
+      brand_primary: branding?.primary_color, brand_accent: branding?.accent_color, brand_surface: branding?.surface_color,
+      items, presentation_mode: snapshot?.presentation_mode === 'cards' || snapshot?.presentation_mode === 'magazine' ? snapshot.presentation_mode : 'comparative',
+      status: saved.decision || 'ready', views_count: saved.viewsCount || 0,
+      created_at: saved.createdAt, updated_at: saved.updatedAt,
+    };
+    await updateDemoProposalByToken(token, (item) => ({ ...item, viewsCount: (item.viewsCount || 0) + 1 }));
+    return <MultiPropertyProposalViewer proposal={proposal} />;
+  }
 
   if (!/^[a-f0-9]{40}$/i.test(token)) {
     return <LinkUnavailable reason="Verifica que copiaste el enlace completo, o solicita uno nuevo a tu asesor." />;

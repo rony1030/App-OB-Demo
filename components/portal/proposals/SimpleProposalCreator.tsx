@@ -224,6 +224,15 @@ export default function SimpleProposalCreator({
     setIsUploadingLogo(true);
     try {
       const extension = file.type === 'image/svg+xml' ? 'svg' : file.type.includes('png') ? 'png' : 'jpg';
+      if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCustomLogoUrl(String(reader.result || ''));
+          setLogoOption('custom');
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
       const storagePath = `ob-brokers-team/proposals/logos/logo-${crypto.randomUUID()}.${extension}`;
       const supabase = createClient();
       const { error: uploadError } = await supabase.storage

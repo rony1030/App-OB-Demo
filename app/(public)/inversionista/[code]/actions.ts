@@ -1,7 +1,6 @@
 'use server';
 
 import { createHmac } from 'node:crypto';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { mailer, SMTP_CONFIG } from '@/lib/email/mailer';
 import { getInvestorPortalDataByCode } from '@/lib/data/investor-portal';
 import { getPaymentFlow } from '@/lib/data/payment-flows';
@@ -45,6 +44,7 @@ function text(formData: FormData, key: string): string {
 
 import { getAuthenticatedInvestorSession, hasDemoAccess } from '@/lib/investor/auth';
 import { findDemoClient } from '@/lib/data/investor-demo';
+import { updateDemoState } from '@/lib/demo/local-store';
 
 /**
  * Recibe el reporte de pago de un inversionista. El acceso se valida por la sesión activa
@@ -59,12 +59,12 @@ export async function reportPaymentAction(formData: FormData): Promise<ReportPay
   if (!code || !Number.isInteger(reservationId)) return { ok: false, error: 'No se pudo identificar el inmueble.' };
 
   const isDemo = Boolean(findDemoClient(code));
-  if (isDemo) {
+  if (isDemo && process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo') {
     const demoAllowed = await hasDemoAccess();
     if (!demoAllowed) {
       return { ok: false, error: 'Acceso no autorizado a la demostración.' };
     }
-  } else {
+  } else if (!isDemo) {
     const session = await getAuthenticatedInvestorSession();
     if (!session || session.publicCode.toUpperCase() !== code) {
       return { ok: false, error: 'Sesión no válida o expirada. Por favor inicie sesión nuevamente.' };
@@ -98,6 +98,23 @@ export async function reportPaymentAction(formData: FormData): Promise<ReportPay
   if (fileError) return { ok: false, error: fileError };
 
   const flow = await getPaymentFlow(unit.projectSlug, data.isDemo);
+  if (data.isDemo && process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    await updateDemoState((state) => {
+      const investor = state.investors[code] ?? { email: data.contact.email ?? '', session: false, paymentReports: [] };
+      investor.paymentReports.push({
+        id: `demo-${Date.now()}`, reservationId, unitCode: unit.unitCode,
+        amount: report.amount, paidAt: report.paidAt, method: report.method,
+        reference: report.reference, note: report.note, createdAt: new Date().toISOString(),
+      });
+      state.investors[code] = investor;
+    });
+    return {
+      ok: true,
+      demo: true,
+      message: 'El reporte quedó guardado en los datos locales de esta demostración.',
+    };
+  }
+
   if (flow.mode !== 'email' && flow.mode !== 'api') {
     return { ok: false, error: 'Este proyecto no recibe reportes desde el portal. Siga los pasos indicados.' };
   }
@@ -116,6 +133,7 @@ export async function reportPaymentAction(formData: FormData): Promise<ReportPay
   if (!data.contact.organizationId) return { ok: false, error: 'No se pudo registrar el reporte. Escriba a su asesor.' };
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  const { createAdminClient } = await import('@/lib/supabase/admin');
   const admin = createAdminClient() as any;
   const methodLabel = PAYMENT_METHODS.find((m) => m.value === report.method)?.label ?? report.method;
 

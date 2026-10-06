@@ -3,14 +3,16 @@ import LeadWorkspace from '@/components/portal/LeadWorkspace';
 import { getPortalProjects } from '@/lib/data/projects';
 import { getCurrentUser } from '@/lib/auth/get-user';
 import { getAgencyAgents } from '@/lib/data/team';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewLeadPage() {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' && !(await cookies()).get('demo_auth_session')) redirect('/login?next=/portal/leads/new');
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect('/login?next=/portal/leads/new');
 
-  const [projects, rawAgents] = await Promise.all([
+  const [projects, rawAgents] = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? [await getPortalProjects(), []] : await Promise.all([
     getPortalProjects(),
     getAgencyAgents(currentUser.organization.id).catch(() => []),
   ]);

@@ -6,6 +6,7 @@
 
 import type { ContactSummary } from '@/lib/data/crm';
 import type { ProposalListItem } from '@/app/portal/proposals/actions';
+import { readDemoState, updateDemoState } from '@/lib/demo/local-store';
 
 // Contactos iniciales de demostración
 export const INITIAL_DEMO_CONTACTS: ContactSummary[] = [
@@ -128,16 +129,55 @@ export function getDemoContacts(): ContactSummary[] {
   return global.__demoContacts ?? INITIAL_DEMO_CONTACTS;
 }
 
+export async function getDemoContactsPersistent(): Promise<ContactSummary[]> {
+  const persisted = await readDemoState();
+  return [...INITIAL_DEMO_CONTACTS, ...(persisted.contacts as ContactSummary[])];
+}
+
 export function addDemoContact(contact: ContactSummary) {
   if (!global.__demoContacts) global.__demoContacts = [...INITIAL_DEMO_CONTACTS];
   global.__demoContacts.unshift(contact);
+}
+
+export async function saveDemoContact(contact: ContactSummary) {
+  await updateDemoState((state) => { state.contacts.unshift(contact); });
 }
 
 export function getDemoProposals(): ProposalListItem[] {
   return global.__demoProposals ?? INITIAL_DEMO_PROPOSALS;
 }
 
+export async function getDemoProposalsPersistent(): Promise<ProposalListItem[]> {
+  const persisted = await readDemoState();
+  return persisted.proposals as ProposalListItem[];
+}
+
 export function addDemoProposal(prop: ProposalListItem) {
   if (!global.__demoProposals) global.__demoProposals = [...INITIAL_DEMO_PROPOSALS];
   global.__demoProposals.unshift(prop);
+}
+
+export async function saveDemoProposal(prop: ProposalListItem) {
+  await updateDemoState((state) => { state.proposals.unshift(prop); });
+}
+
+export async function updateDemoProposal(id: number, update: (proposal: ProposalListItem) => ProposalListItem | null) {
+  return updateDemoState((state) => {
+    const index = state.proposals.findIndex((proposal) => (proposal as ProposalListItem).id === id);
+    if (index < 0) return false;
+    const next = update(state.proposals[index] as ProposalListItem);
+    if (!next) state.proposals.splice(index, 1);
+    else state.proposals[index] = next;
+    return true;
+  });
+}
+
+export async function updateDemoProposalByToken(token: string, update: (proposal: ProposalListItem) => ProposalListItem) {
+  return updateDemoState((state) => {
+    const proposal = state.proposals.find((item) => (item as ProposalListItem).sharedToken === token) as ProposalListItem | undefined;
+    if (!proposal) return false;
+    const index = state.proposals.indexOf(proposal);
+    state.proposals[index] = update(proposal);
+    return true;
+  });
 }

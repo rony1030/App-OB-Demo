@@ -1,8 +1,8 @@
 {
-  "name": "OB Brokers CRM",
-  "short_name": "OB CRM",
-  "description": "Plataforma de Gestión Comercial y Master Broker Inmobiliario",
-  "start_url": "/portal",
+  "name": "OB Brokers Demo",
+  "short_name": "OB Demo",
+  "description": "Entorno de demostración local para brokers, inversionistas y developers",
+  "start_url": "/inversionista",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -10,13 +10,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/brand/logo-isotype-blue.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/brand/logo-isotype-blue.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

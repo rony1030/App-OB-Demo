@@ -2,24 +2,16 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Script from 'next/script';
 import { headers, cookies } from 'next/headers';
-import { Dancing_Script, Fraunces, Great_Vibes, Inter } from 'next/font/google';
 import './globals.css';
 import { BrandProvider } from '../components/branding/BrandProvider';
 import { LocaleProvider } from '@/components/i18n/LocaleProvider';
 import type { Locale } from '@/lib/i18n/locale';
-import { getPublicAssetUrl } from '@/lib/supabase/storage';
 import AppLaunch from '@/components/pwa/AppLaunch';
 import AppNotifications from '@/components/feedback/AppNotifications';
 
 const favicon = '/brand/logo-isotype-blue.png';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
-// Editorial serif for headlines — echoes the serif "OB" wordmark in the brand
-// logo instead of pairing it with an all-sans-serif SaaS look.
-const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display', axes: ['opsz', 'SOFT', 'WONK'] });
-// Script faces used only for the agent signature in the Estudio Creativo carousel.
-const dancingScript = Dancing_Script({ subsets: ['latin'], variable: '--font-signature-dancing' });
-const greatVibes = Great_Vibes({ subsets: ['latin'], weight: '400', variable: '--font-signature-greatvibes' });
+const isDemoDeployment = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';
 
 export const viewport = {
   themeColor: '#ffffff',
@@ -61,23 +53,28 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       : 'es';
 
   return (
-    <html lang={initialLocale} className={`${inter.variable} ${fraunces.variable} ${dancingScript.variable} ${greatVibes.variable}`}>
+    <html lang={initialLocale} className={isDemoDeployment ? 'demo-fonts' : 'production-fonts'}>
       <head>
-        <link
+        {!isDemoDeployment && <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Fraunces:opsz,wght@9..144,100..900&family=Great+Vibes&family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        </>}
+        {!isDemoDeployment && <link
           rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossOrigin=""
-        />
+        />}
       </head>
       <body className="antialiased">
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-SJ90BN2127" strategy="afterInteractive" />
-        <Script id="google-analytics" strategy="afterInteractive">
+        {!isDemoDeployment && <Script src="https://www.googletagmanager.com/gtag/js?id=G-SJ90BN2127" strategy="afterInteractive" />}
+        {!isDemoDeployment && <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){window.dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-SJ90BN2127', { anonymize_ip: true });`}
-        </Script>
+        </Script>}
         <LocaleProvider initialLocale={initialLocale}>
           <AppLaunch />
-          <AppNotifications />
+          {!isDemoDeployment && <AppNotifications />}
           <BrandProvider>{children}</BrandProvider>
         </LocaleProvider>
       </body>

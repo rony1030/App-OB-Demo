@@ -1,12 +1,19 @@
 import { redirect } from 'next/navigation';
 import PortalDashboard from '@/components/portal/PortalDashboard';
-import { getPortalProjects } from '@/lib/data/projects';
-import { getCrmDashboardSummary, getMyPendingActivities } from '@/lib/data/crm';
-import { getMyAgreements } from '@/lib/data/agreements';
-import { getCurrentUser } from '@/lib/auth/get-user';
-import { hasCapability } from '@/lib/auth/permissions';
+import { cookies } from 'next/headers';
 
 export default async function PortalPage() {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    if (!(await cookies()).get('demo_auth_session')) redirect('/login?next=/portal');
+    const { getCrmDashboardSummary } = await import('@/lib/data/crm');
+    const { DEMO_PORTAL_PROJECT_VILLAS } = await import('@/lib/data/demo-villas-project');
+    const [crm] = await Promise.all([getCrmDashboardSummary()]);
+    const projects = [DEMO_PORTAL_PROJECT_VILLAS];
+    return <PortalDashboard projects={projects} displayName="Soporte OB Brokers" crm={crm} todayActivities={[]} myAgreement={null} canCreateProposals />;
+  }
+  const [{ getPortalProjects }, { getMyPendingActivities, getCrmDashboardSummary }, { getMyAgreements }, { getCurrentUser }, { hasCapability }] = await Promise.all([
+    import('@/lib/data/projects'), import('@/lib/data/crm'), import('@/lib/data/agreements'), import('@/lib/auth/get-user'), import('@/lib/auth/permissions'),
+  ]);
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect('/login?next=/portal');
   if (

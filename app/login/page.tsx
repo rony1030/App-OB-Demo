@@ -20,7 +20,6 @@ import { requestMagicLinkAction, type MagicLinkState } from '@/app/auth/magic-ac
 import { getPublicAssetUrl } from '@/lib/supabase/storage';
 import BrandLogo from '@/components/branding/BrandLogo';
 import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
 
 function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   const [state, formAction, isPending] = useActionState<AuthState, FormData>(
@@ -76,13 +75,16 @@ function LoginForm() {
   const urlError = searchParams.get('error');
 
   useEffect(() => {
+    const run = async () => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return;
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const accessToken = hash.get('access_token');
     const refreshToken = hash.get('refresh_token');
     if (!accessToken || !refreshToken) return;
 
     let cancelled = false;
-    const supabase = createClient();
+    const supabaseModule = await import('@/lib/supabase/client');
+    const supabase = supabaseModule.createClient();
     void supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ error }) => {
       if (cancelled) return;
       if (error) {
@@ -93,6 +95,8 @@ function LoginForm() {
       window.location.replace(next);
     });
     return () => { cancelled = true; };
+    };
+    void run();
   }, [next]);
 
   const isDemo = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';

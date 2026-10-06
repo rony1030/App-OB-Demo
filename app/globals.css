@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Local fonts keep the isolated demo fully usable in offline builds. */
+.demo-fonts, .production-fonts {
+  --font-signature-dancing: 'Dancing Script', 'Segoe Script', cursive;
+  --font-signature-greatvibes: 'Great Vibes', 'Segoe Script', cursive;
+  --pb-sans: 'Plus Jakarta Sans';
+}
+
+.demo-fonts {
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+}
+
+.production-fonts {
+  --font-sans: 'Inter', Arial, Helvetica, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+}
+
+.font-system-sans { --pb-sans: 'Plus Jakarta Sans'; }
+.signature-script { font-family: 'Dancing Script', 'Segoe Script', cursive; }
+
 @layer components {
   .editor-input {
     @apply h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100;

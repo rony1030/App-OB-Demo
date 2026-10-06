@@ -1,6 +1,6 @@
 "use server";
 
-import { getDemoProposals, addDemoProposal } from '@/lib/demo/local-crm-store';
+import { getDemoProposalsPersistent, saveDemoProposal, updateDemoProposal } from '@/lib/demo/local-crm-store';
 
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
@@ -60,6 +60,9 @@ export type ProposalListItem = {
   sharedUrl?: string;
   sharedExpiresAt?: string;
   viewsCount?: number;
+  snapshot?: unknown;
+  decision?: 'accepted' | 'rejected';
+  decisionComment?: string;
   versionNumber?: number;
   pageCount?: number;
   sharedLinkId?: number;
@@ -87,6 +90,11 @@ export type ProposalTracking = {
 };
 
 export async function getProposalTrackingAction(presentationId: number): Promise<{ data?: ProposalTracking; error?: string }> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const item = (await getDemoProposalsPersistent()).find((proposal) => proposal.id === presentationId);
+    if (!item) return { error: 'Documento no encontrado o sin acceso.' };
+    return { data: { presentationId, title: item.title, kind: item.kind, clientName: item.clientName || 'Sin asignar', projectName: item.projectName || 'Villas en Punta Cana', views: item.viewsCount || 0, pdfs: 0, shares: 0, whatsappClicks: 0, averageDurationSeconds: 0, devices: [], locations: [], activity: [] } };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser?.organization?.id || !Number.isInteger(presentationId)) return { error: 'No tienes permiso para ver este seguimiento.' };
@@ -164,6 +172,7 @@ export async function getProposalTrackingAction(presentationId: number): Promise
 }
 
 export async function getProposalsListAction(): Promise<ProposalListItem[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return getDemoProposalsPersistent();
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
 
@@ -460,6 +469,12 @@ export async function getProposalsListAction(): Promise<ProposalListItem[]> {
 /** Archive keeps the immutable proposal, links and audit trail available to admins. */
 export async function archivePresentationAction(presentationId: number): Promise<{ success?: boolean; error?: string }> {
   try {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const updated = await updateDemoProposal(presentationId, (proposal) => ({ ...proposal, status: 'archived', updatedAt: new Date().toISOString() }));
+    if (!updated) return { error: 'La propuesta ya no está disponible.' };
+    revalidatePath('/portal/proposals');
+    return { success: true };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser?.organization?.id || !Number.isInteger(presentationId)) return { error: 'No tienes permiso para archivar esta propuesta.' };
@@ -516,6 +531,12 @@ export async function archivePresentationAction(presentationId: number): Promise
 /** Deletes an agency-owned document and its public links; the audit event remains. */
 export async function deletePresentationAction(presentationId: number): Promise<{ success?: boolean; error?: string }> {
   try {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      const deleted = await updateDemoProposal(presentationId, () => null);
+      if (!deleted) return { error: 'Documento no encontrado o sin acceso.' };
+      revalidatePath('/portal/proposals');
+      return { success: true };
+    }
     const currentUser = await getCurrentUser();
     if (!currentUser?.organization?.id || !Number.isSafeInteger(presentationId) || presentationId <= 0) {
       return { error: 'Documento no encontrado o sin acceso.' };
@@ -575,6 +596,26 @@ export async function saveProposalAction(payload: {
   offerId?: number;
   snapshot: Json;
 }): Promise<SaveProposalResponse> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const snapshot = payload.snapshot as unknown as Record<string, unknown>;
+    const client = snapshot.client as { name?: string; email?: string; phone?: string } | undefined;
+    const clientName = String(snapshot.client_name || client?.name || '');
+    const clientEmail = String(snapshot.client_email || client?.email || '') || undefined;
+    const clientPhone = String(snapshot.client_phone || client?.phone || '') || undefined;
+    const project = String(snapshot.project || snapshot.projectName || 'Villas en Punta Cana');
+    const id = Date.now();
+    const token = crypto.randomBytes(20).toString('hex');
+    const item = {
+      id, kind: payload.kind, title: payload.title.trim(), status: 'ready',
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      clientName, clientEmail, clientPhone, snapshot: payload.snapshot,
+      projectName: project, projectSlug: 'villas-en-punta-cana',
+      currency: 'USD', sharedToken: token, sharedUrl: `/p/${token}`, viewsCount: 0,
+    } satisfies ProposalListItem;
+    await saveDemoProposal(item);
+    revalidatePath('/portal/proposals');
+    return { success: true, presentationId: id, token, url: `/p/${token}`, snapshot: payload.snapshot, emailStatus: 'skipped', status: 'ready' };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
 

@@ -1,13 +1,24 @@
 
-import { UITranslationBoundary } from '@/components/i18n/UITranslationBoundary';
 import { redirect } from 'next/navigation';
 import EnhancedDeveloperOverview from '@/components/portal/EnhancedDeveloperOverview';
-import { getDeveloperOverview } from '@/lib/data/developer';
-import { getCurrentUser } from '@/lib/auth/get-user';
-import { getProjectReporting } from '@/lib/data/project-reporting';
-import ProjectReportingDashboard from '@/components/portal/ProjectReportingDashboard';
+import { DEMO_PROJECT_VILLAS } from '@/lib/demo/mock-store';
+import { cookies } from 'next/headers';
 
 export default async function DeveloperPortalPage() {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' && !(await cookies()).get('demo_auth_session')) redirect('/login?next=/portal/developer');
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const project = DEMO_PROJECT_VILLAS;
+    const overview = {
+      projects: [{ id: project.id, name: project.name, slug: project.slug, publicationStatus: 'published', lifecycleStatus: project.lifecycle_status,
+        totalUnits: project.units.length, availableUnits: project.units.filter((unit) => unit.status === 'available').length,
+        inventoryUpdatedAt: null, documentsCount: 5, activeMasterBrokersCount: 2, proposalViews: 10, dossierViews: 7, pdfDownloads: 4 }],
+      totalProjects: 1, totalUnitsAvailable: project.units.filter((unit) => unit.status === 'available').length, totalActiveMasterBrokers: 2,
+    };
+    return <><div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-950">Panel de desarrolladora · Datos locales del proyecto {project.name}.</div><EnhancedDeveloperOverview overview={overview} orgName={project.developer_name} readOnly /></>;
+  }
+  const [{ getDeveloperOverview }, { getCurrentUser }, { getProjectReporting }, { default: ProjectReportingDashboard }, { UITranslationBoundary }] = await Promise.all([
+    import('@/lib/data/developer'), import('@/lib/auth/get-user'), import('@/lib/data/project-reporting'), import('@/components/portal/ProjectReportingDashboard'), import('@/components/i18n/UITranslationBoundary'),
+  ]);
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect('/login?next=/portal/developer');
   const canViewDeveloperPanel =

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safePublicProposalMetadata, safePublicSessionId } from '@/lib/analytics/public-proposal-events';
+import { updateDemoProposalByToken } from '@/lib/demo/local-crm-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,11 @@ export async function POST(request: Request, context: { params: Promise<{ token:
     }
     if (!/^[a-f0-9]{40}$/i.test(token) || !eventType || !PUBLIC_PROPOSAL_EVENTS.has(eventType)) {
       return NextResponse.json({ error: 'Evento inválido.' }, { status: 400 });
+    }
+
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      await updateDemoProposalByToken(token, (proposal) => ({ ...proposal, viewsCount: (proposal.viewsCount || 0) + (eventType === 'session_ping' ? 0 : 1) }));
+      return NextResponse.json({ ok: true });
     }
 
     const supabase = createAdminClient();

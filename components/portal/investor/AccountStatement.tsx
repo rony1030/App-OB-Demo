@@ -14,7 +14,7 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: stri
   );
 }
 
-export default function AccountStatement({ unit, code, advisor }: { unit: InvestorReservationItem; code: string; advisor: InvestorAdvisor }) {
+export default function AccountStatement({ unit, code, advisor, isDemo = false }: { unit: InvestorReservationItem; code: string; advisor: InvestorAdvisor; isDemo?: boolean }) {
   const [filter, setFilter] = useState<'all' | 'open'>('all');
   const a = unit.account;
   const c = unit.currency;
@@ -35,7 +35,7 @@ export default function AccountStatement({ unit, code, advisor }: { unit: Invest
         </dl>
       </section>
 
-      <PaymentReport unit={unit} code={code} advisor={advisor} />
+      <PaymentReport unit={unit} code={code} advisor={advisor} isDemo={isDemo} />
 
       <section aria-labelledby="schedule-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -122,7 +122,7 @@ export default function AccountStatement({ unit, code, advisor }: { unit: Invest
       </section>
 
       <section aria-labelledby="receipts-title">
-        <h3 id="receipts-title" className="font-display text-xl text-[#101826]">Comprobantes bancarios confirmados</h3>
+        <h3 id="receipts-title" className="font-display text-xl text-[#101826]">Comprobantes y reportes de pago</h3>
         {unit.receipts.length === 0 ? (
           <p className="mt-4 border-y border-[#DCE3EE] py-8 text-center text-sm text-[#6B7280]">
             Aún no hay comprobantes registrados en este expediente.

@@ -54,10 +54,7 @@ type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 export async function getCurrentUser(
   supabaseClient?: SupabaseServerClient
 ): Promise<CurrentSessionUser | null> {
-  // Standard Supabase Session
-  const supabase = supabaseClient ?? (await createClient());
-
-    const cookieStoreForDemo = await cookies();
+  const cookieStoreForDemo = await cookies();
   const demoCookie = cookieStoreForDemo.get('demo_auth_session')?.value;
   if (demoCookie === 'soporte@osvaldobello.com' || process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
     return {
@@ -92,6 +89,10 @@ export async function getCurrentUser(
       },
     };
   }
+
+  // Standard Supabase Session. Keep this below the demo branch so demo routes
+  // can resolve their local session without constructing a Supabase client.
+  const supabase = supabaseClient ?? (await createClient());
 
   const {
     data: { user },

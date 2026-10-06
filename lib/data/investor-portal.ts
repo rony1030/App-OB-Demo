@@ -1,10 +1,9 @@
 import 'server-only';
 
-import { createAdminClient } from '@/lib/supabase/admin';
-import { getProjectConstructionUpdates, type ProjectConstructionUpdate } from '@/lib/data/construction-updates';
-import { getPublicAssetUrl, PUBLIC_ASSETS_BUCKET } from '@/lib/supabase/storage';
+import type { ProjectConstructionUpdate } from '@/lib/data/construction-updates';
 import { buildDemoUnit, findDemoClient } from '@/lib/data/investor-demo';
 import { getDemoConstructionUpdates } from '@/lib/data/investor-demo-construction';
+import { readDemoState } from '@/lib/demo/local-store';
 import { getPaymentFlow, toPublicFlow } from '@/lib/data/payment-flows';
 import type { PaymentFlowPublic } from '@/lib/investor/payment-report';
 import {
@@ -130,6 +129,10 @@ function receiptsFromInstallments(schedule: ComputedInstallment[], currency: str
 
 async function constructionFor(slugs: string[], demo = false): Promise<Record<string, ProjectConstructionUpdate[]>> {
   const unique = Array.from(new Set(slugs));
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    return Object.fromEntries(unique.map((slug) => [slug, getDemoConstructionUpdates(slug)]));
+  }
+  const { getProjectConstructionUpdates } = await import('@/lib/data/construction-updates');
   const entries = await Promise.all(
     unique.map(async (slug) => {
       const real = await getProjectConstructionUpdates(slug);
@@ -179,7 +182,22 @@ async function buildDemoPortal(code: string): Promise<InvestorPortalData | null>
     };
   });
   const reservations = await attachFlows(bases, true);
-
+  const localState = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? await readDemoState() : null;
+  const reports = localState?.investors[client.code]?.paymentReports ?? [];
+  for (const report of reports) {
+    if (!report || typeof report !== 'object') continue;
+    const entry = report as { id?: string; reservationId?: number; unitCode?: string; amount?: number; paidAt?: string; reference?: string | null };
+    const reservation = reservations.find((item) => item.reservationId === entry.reservationId || item.unitCode === entry.unitCode);
+    if (!reservation) continue;
+    reservation.receipts.push({
+      id: entry.id || `demo-report-${reservation.unitCode}`,
+      label: `Reporte local${entry.reference ? ` · ${entry.reference}` : ''}`,
+      amount: Number(entry.amount) || 0,
+      currency: reservation.currency,
+      paidAt: entry.paidAt || null,
+      status: 'pending',
+    });
+  }
   return {
     contact: {
       id: client.id,
@@ -203,13 +221,15 @@ async function buildDemoPortal(code: string): Promise<InvestorPortalData | null>
       unitCode: d.unitCode,
       url: null,
     })),
-    constructionByProject: await constructionFor(reservations.map((r) => r.projectSlug), true),
+    constructionByProject: await constructionFor(reservations.map((r) => r.projectSlug), process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo'),
     isDemo: true,
   };
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 async function loadPortalFromDatabase(cleanCode: string): Promise<InvestorPortalData | null> {
+  const { createAdminClient } = await import('@/lib/supabase/admin');
+  const { getPublicAssetUrl, PUBLIC_ASSETS_BUCKET } = await import('@/lib/supabase/storage');
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const admin = createAdminClient() as any;
   const contactColumns = 'id, first_name, last_name, email, phone, public_code, organization_id, created_at';
 
@@ -408,6 +428,7 @@ export async function getInvestorPortalDataByCode(code: string, allowDemo = fals
     if (demo) return demo;
   }
 
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return null;
   try {
     return await loadPortalFromDatabase(cleanCode);
   } catch (error) {
@@ -421,7 +442,9 @@ export async function investorCodeExists(code: string): Promise<boolean> {
   const clean = code.trim().toUpperCase();
   if (!/^[A-Z0-9-]{4,40}$/.test(clean)) return false;
   if (findDemoClient(clean)) return true;
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return false;
   try {
+    const { createAdminClient } = await import('@/lib/supabase/admin');
     const admin = createAdminClient();
     const { data: contact } = await admin.from('contacts').select('id').eq('public_code', clean).is('deleted_at', null).maybeSingle();
     if (contact) return true;

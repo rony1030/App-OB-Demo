@@ -24,10 +24,12 @@ export default function PaymentReport({
   unit,
   code,
   advisor,
+  isDemo = false,
 }: {
   unit: InvestorReservationItem;
   code: string;
   advisor: InvestorAdvisor;
+  isDemo?: boolean;
 }) {
   const flow = unit.paymentFlow;
   const [pending, startTransition] = useTransition();
@@ -51,13 +53,15 @@ export default function PaymentReport({
   };
 
   const amount = suggestedAmount(unit);
-  const canSubmit = flow.mode === 'email' || flow.mode === 'api';
+  const canSubmit = isDemo || flow.mode === 'email' || flow.mode === 'api';
 
   return (
     <section aria-labelledby="report-title" className="rounded-xl border border-[#DCE3EE] bg-[#F8FAFD] p-5 sm:p-6">
       <h3 id="report-title" className="font-display text-xl text-[#101826]">Reportar un pago</h3>
       <p className="mt-1 text-sm text-[#5B6472]">
-        {canSubmit
+        {isDemo
+          ? 'En esta demostración, el reporte se guardará localmente y no se enviará a ningún proveedor.'
+          : canSubmit
           ? `Su reporte se envía a ${flow.developerName} para verificar el pago y aplicarlo a su estado de cuenta.`
           : flow.mode === 'redirect'
           ? `Los pagos de este proyecto se realizan en el portal de ${flow.developerName}.`
@@ -73,13 +77,13 @@ export default function PaymentReport({
         ))}
       </ol>
 
-      {flow.mode === 'redirect' && flow.redirectUrl && (
+      {!isDemo && flow.mode === 'redirect' && flow.redirectUrl && (
         <a href={flow.redirectUrl} target="_blank" rel="noopener noreferrer" className={`${primaryBtn} mt-6`}>
           Ir al portal de pagos de {flow.developerName} <ExternalLink className="h-4 w-4" aria-hidden />
         </a>
       )}
 
-      {flow.mode === 'instructions' && (
+      {!isDemo && flow.mode === 'instructions' && (
         <a
           href={whatsappLink(advisor.whatsapp, `Hola, acabo de pagar la unidad ${unit.unitCode}. Adjunto mi comprobante.`)}
           target="_blank"
@@ -96,7 +100,7 @@ export default function PaymentReport({
             <CheckCircle2 className="h-5 w-5" aria-hidden /> Reporte enviado
           </p>
           <p className="mt-1 text-sm text-[#3d4655]">{result.message}</p>
-          {result.demo && <p className="mt-2 text-xs text-[#6B7280]">Cliente de demostración: no se envió ningún correo ni se guardó información.</p>}
+          {result.demo && <p className="mt-2 text-xs text-[#6B7280]">Guardado únicamente en los datos locales de este demo. No se envió correo ni se contactó a un proveedor.</p>}
           <button
             type="button"
             onClick={() => {

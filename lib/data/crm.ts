@@ -1,4 +1,5 @@
-import { getDemoContacts } from '@/lib/demo/local-crm-store';
+import { getDemoContactsPersistent } from '@/lib/demo/local-crm-store';
+import { readDemoState } from '@/lib/demo/local-store';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/get-user';
 import { getMyAgreements } from '@/lib/data/agreements';
@@ -78,7 +79,7 @@ export type ClientDocument = { id: number; publicCode: string; documentType: str
 
 export async function getContacts(): Promise<ContactSummary[]> {
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
-    return getDemoContacts();
+    return getDemoContactsPersistent();
   }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
@@ -242,6 +243,25 @@ const EMPTY_STAGE_RECORD: Record<DashboardStage, number> = {
 };
 
 export async function getCrmDashboardSummary(): Promise<CrmDashboardSummary> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const contacts = await getDemoContactsPersistent();
+    const recentLeads = contacts.slice(0, 5).map((contact) => ({
+      id: contact.id, publicCode: contact.publicCode, name: contact.fullName,
+      email: contact.email || '', updatedAt: contact.updatedAt,
+      project: contact.primaryOpportunity?.projectName || 'Villas en Punta Cana',
+      value: contact.primaryOpportunity?.budgetMax || 0,
+      stage: (contact.primaryOpportunity?.stage || 'Nuevo') as DashboardStage,
+      initials: contact.fullName.split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase(),
+    }));
+    const stages = { ...EMPTY_STAGE_RECORD };
+    let pipelineTotalValue = 0;
+    for (const contact of contacts) {
+      const stage = (contact.primaryOpportunity?.stage || 'Nuevo') as DashboardStage;
+      if (stage in stages) stages[stage] += 1;
+      pipelineTotalValue += contact.primaryOpportunity?.budgetMax || 0;
+    }
+    return { activeClientsCount: contacts.length, pipelineTotalValue, stageCounts: stages, stageValues: { ...EMPTY_STAGE_RECORD }, recentLeads, wonThisMonthCount: 0, totalClosedThisMonthCount: 0 };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) {
@@ -373,6 +393,7 @@ export type TodayActivity = {
 };
 
 export async function getMyPendingActivities(): Promise<TodayActivity[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [];
   const currentUser = await getCurrentUser();
   if (!currentUser) return [];
 
@@ -396,6 +417,21 @@ export async function getMyPendingActivities(): Promise<TodayActivity[]> {
 }
 
 export async function getContactByCode(code: string): Promise<(ContactDetail & { organizationId: number }) | null> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const contacts = await getDemoContactsPersistent();
+    const contact = contacts.find((entry) => entry.publicCode.toLowerCase() === code.trim().toLowerCase());
+    if (!contact) return null;
+    const state = await readDemoState();
+    const extra = state.contactDetails[String(contact.id)] ?? { notes: [], activities: [] };
+    const stage = extra.stage || contact.primaryOpportunity?.stage || 'Nuevo';
+    return { ...contact, organizationId: 1, notes: extra.notes, activities: extra.activities as ContactDetail['activities'], opportunities: [{
+      id: contact.primaryOpportunity?.id || contact.id, publicCode: contact.primaryOpportunity?.publicCode || `OPP-${contact.id}`,
+      stage, priority: contact.primaryOpportunity?.priority || 'Media', budgetMin: contact.primaryOpportunity?.budgetMin ?? null,
+      budgetMax: contact.primaryOpportunity?.budgetMax ?? null, currency: contact.primaryOpportunity?.currency || 'USD',
+      objective: 'Inversión', nextFollowUpAt: null, closedReason: null,
+      projects: [{ id: 39, name: contact.primaryOpportunity?.projectName || 'Villas en Punta Cana', slug: 'villas-en-punta-cana' }], units: [],
+    }], customFields: {} };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return null;
@@ -414,6 +450,10 @@ export async function getContactByCode(code: string): Promise<(ContactDetail & {
 }
 
 export async function getContactById(id: number): Promise<ContactDetail | null> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const contact = (await getDemoContactsPersistent()).find((entry) => entry.id === id);
+    return contact ? getContactByCode(contact.publicCode) : null;
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return null;
@@ -588,6 +628,7 @@ export async function getContactById(id: number): Promise<ContactDetail | null> 
 }
 
 export async function getClientDocuments(contactId: number): Promise<ClientDocument[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [];
   const supabase = await createClient();
   // This table is introduced by a migration that can be newer than the
   // generated Supabase type snapshot used during deployment builds.
@@ -609,6 +650,10 @@ export async function getClientDocuments(contactId: number): Promise<ClientDocum
 }
 
 export async function getContactLeadReportingContext(contactId: number): Promise<{ targets: LeadReportTarget[]; reports: ContactLeadReport[] }> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const contact = (await getDemoContactsPersistent()).find((entry) => entry.id === contactId);
+    return { targets: contact ? [{ projectId: 39, projectName: contact.primaryOpportunity?.projectName || 'Villas en Punta Cana', developerName: 'Bello Valdez Enterprise', agreementId: 0 }] : [], reports: [] };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return { targets: [], reports: [] };
@@ -680,6 +725,7 @@ export type AccessibleProject = {
 };
 
 export async function getAccessibleProjects(): Promise<AccessibleProject[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [{ id: 39, name: 'Villas en Punta Cana', slug: 'villas-en-punta-cana', developerName: 'Bello Valdez Enterprise' }];
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return [];
@@ -813,6 +859,7 @@ export type ClientReservationPayment = {
 };
 
 export async function getClientReservationPayments(contactId: number): Promise<ClientReservationPayment[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [];
   const supabase = await createClient();
   const { data: opportunities } = await supabase.from('opportunities').select('id').eq('contact_id', contactId);
   const opportunityIds = (opportunities || []).map((item) => item.id);

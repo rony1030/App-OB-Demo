@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { cookies, headers } from 'next/headers';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { mailer, SMTP_CONFIG } from '@/lib/email/mailer';
+import { updateDemoState } from '@/lib/demo/local-store';
+import { DEMO_CLIENTS } from '@/lib/data/investor-demo';
 
 export const INVESTOR_SESSION_COOKIE = 'ob_inv_session';
 export const INVESTOR_DEMO_COOKIE = 'ob_inv_demo_access';
@@ -81,6 +82,17 @@ export async function requestInvestorOtp(rawEmail: string): Promise<{ ok: boolea
     return { ok: false, error: 'Por favor ingrese un correo electrónico válido.' };
   }
 
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const client = DEMO_CLIENTS.find((entry) => entry.email.toLowerCase() === email);
+    if (!client) return { ok: false, error: 'No encontramos un perfil demo con ese correo. Pruebe Carlos, Elena o Roberto desde “Ver modo demostración”.' };
+    const code = 'DEMO26';
+    await updateDemoState((state) => {
+      state.investorOtps[email] = { code, expiresAt: Date.now() + OTP_TTL_MS };
+      state.investors[client.code] ??= { email, session: false, paymentReports: [] };
+    });
+    return { ok: true, message: 'Código de demostración: DEMO26 (no se envió ningún correo).' };
+  }
+
   // Comprobar que no sea un correo ficticio de demo
   if (email.endsWith('@demoinversionista.com') || email.includes('demo')) {
     return {
@@ -90,6 +102,7 @@ export async function requestInvestorOtp(rawEmail: string): Promise<{ ok: boolea
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  const { createAdminClient } = await import('@/lib/supabase/admin');
   const admin = createAdminClient() as any;
   const clientIp = await getClientIp();
 
@@ -219,7 +232,25 @@ export async function verifyInvestorOtp(
     return { ok: false, error: 'Ingrese el correo y el código de verificación.' };
   }
 
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const match = DEMO_CLIENTS.find((entry) => entry.email.toLowerCase() === email);
+    if (!match) return { ok: false, error: 'El correo no corresponde a un perfil demo.' };
+    const cookieStore = await cookies();
+    const valid = await updateDemoState((state) => {
+      const challenge = state.investorOtps[email];
+      if (!challenge || challenge.expiresAt < Date.now() || challenge.code !== cleanCode) return false;
+      delete state.investorOtps[email];
+      state.investors[match.code] = { email, session: true, paymentReports: state.investors[match.code]?.paymentReports ?? [] };
+      return true;
+    });
+    if (!valid) return { ok: false, error: 'Código demo incorrecto o expirado. Solicite otro.' };
+    cookieStore.set(INVESTOR_SESSION_COOKIE, `demo:${match.code}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 30 * 24 * 60 * 60 });
+    await updateDemoState((state) => { state.investorSession = { code: match.code, email }; });
+    return { ok: true, publicCode: match.code };
+  }
+
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  const { createAdminClient } = await import('@/lib/supabase/admin');
   const admin = createAdminClient() as any;
   const nowIso = new Date().toISOString();
 
@@ -333,12 +364,27 @@ export async function verifyInvestorOtp(
 export async function getAuthenticatedInvestorSession(): Promise<InvestorAuthSession | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(INVESTOR_SESSION_COOKIE)?.value;
-  if (!token || token.length < 32) return null;
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const { readDemoState } = await import('@/lib/demo/local-store');
+    const active = (await readDemoState()).investorSession;
+    if (!active) return null;
+    const demoClient = DEMO_CLIENTS.find((entry) => entry.code === active.code);
+    return demoClient ? { sessionId: `demo-${demoClient.id}`, contactId: demoClient.id, email: active.email, publicCode: demoClient.code, fullName: demoClient.fullName } : null;
+  }
+  if (!token) return null;
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' && token.startsWith('demo:')) {
+    const client = DEMO_CLIENTS.find((entry) => entry.code === token.slice(5));
+    if (!client) return null;
+    return { sessionId: `demo-${client.id}`, contactId: client.id, email: client.email, publicCode: client.code, fullName: client.fullName };
+  }
+  if (token.length < 32) return null;
 
   const tokenHash = hashValue(token);
   const nowIso = new Date().toISOString();
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  const { createAdminClient } = await import('@/lib/supabase/admin');
   const admin = createAdminClient() as any;
   const { data: session } = await admin
     .from('investor_sessions')
@@ -389,11 +435,17 @@ export async function getAuthenticatedInvestorSession(): Promise<InvestorAuthSes
  */
 export async function logoutInvestor(): Promise<void> {
   const cookieStore = await cookies();
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    await updateDemoState((state) => { state.investorSession = null; });
+    cookieStore.delete(INVESTOR_SESSION_COOKIE);
+    return;
+  }
   const token = cookieStore.get(INVESTOR_SESSION_COOKIE)?.value;
 
   if (token) {
     const tokenHash = hashValue(token);
     /* eslint-disable @typescript-eslint/no-explicit-any */
+    const { createAdminClient } = await import('@/lib/supabase/admin');
     const admin = createAdminClient() as any;
     await admin
       .from('investor_sessions')

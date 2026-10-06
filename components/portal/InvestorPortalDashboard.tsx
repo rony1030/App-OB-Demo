@@ -160,7 +160,7 @@ export default function InvestorPortalDashboard({ data }: { data: InvestorPortal
               <AttentionNotice unit={unit} advisor={data.advisor} onNavigate={changeTab} />
               <div className="rounded-xl bg-white p-5 shadow-[0_6px_24px_-14px_rgba(11,19,43,0.3)] ring-1 ring-[#E4EBF5] sm:p-8">
                 {tab === 'summary' && <UnitOverview unit={unit} />}
-                {tab === 'payments' && <AccountStatement unit={unit} code={data.contact.publicCode} advisor={data.advisor} />}
+                {tab === 'payments' && <AccountStatement unit={unit} code={data.contact.publicCode} advisor={data.advisor} isDemo={data.isDemo} />}
                 {tab === 'documents' && <DocumentsPanel documents={data.documents} unitCode={unit.unitCode} advisor={data.advisor} />}
                 {tab === 'progress' && (
                   <section aria-label="Avances de obra">

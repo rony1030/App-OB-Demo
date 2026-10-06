@@ -5,8 +5,13 @@ import OrgLegalInfoCard from '@/components/portal/admin/OrgLegalInfoCard';
 import { getAdminDashboardData, getOrganizationLegalInfo } from '@/lib/data/admin';
 import { getCurrentUser } from '@/lib/auth/get-user';
 import { getIssuedAgreements, getOrgAgreementsOverview } from '@/lib/data/agreements';
+import { cookies } from 'next/headers';
 
 export default async function AdminPortalPage() {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    if (!(await cookies()).get('demo_auth_session')) redirect('/login?next=/portal/admin');
+    redirect('/portal');
+  }
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {

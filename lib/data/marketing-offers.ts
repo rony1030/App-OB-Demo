@@ -110,6 +110,7 @@ export async function getMarketingOffersForAdmin(): Promise<MarketingOffer[]> {
 }
 
 export async function getActiveMarketingOffersForProject(projectId: number): Promise<MarketingOffer[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [];
   const supabase = await createClient();
   const now = new Date().toISOString();
   const { data: links, error: linksError } = await supabase

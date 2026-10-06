@@ -6,12 +6,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus_Jakarta_Sans } from 'next/font/google';
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { PARIDERA_PHASES } from '@/lib/data/paridera-portfolio';
 
-const sans = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--pb-sans' });
+const sans = { variable: 'font-system-sans' };
 
 export const usd = (value: number) => `US$ ${value.toLocaleString('en-US')}`;
 

@@ -3,14 +3,14 @@ import { UITranslationBoundary, LocalizedText } from '@/components/i18n/UITransl
 
 
 import { useEffect, useRef, useState } from 'react';
-import { Dancing_Script, Great_Vibes, Sacramento } from 'next/font/google';
 import { Eraser, PenLine, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isCanvasBlank, trimCanvas, renderTypedSignature } from '@/lib/signatures/signature-image';
 
-const greatVibes = Great_Vibes({ subsets: ['latin'], weight: '400' });
-const dancingScript = Dancing_Script({ subsets: ['latin'], weight: ['400', '700'] });
-const sacramento = Sacramento({ subsets: ['latin'], weight: '400' });
+const signatureFont = { className: 'signature-script', style: { fontFamily: 'cursive' } };
+const greatVibes = signatureFont;
+const dancingScript = signatureFont;
+const sacramento = signatureFont;
 
 const FONTS = [
   { id: 'vibes', label: 'Elegante', font: greatVibes, size: 64, weight: 400 },

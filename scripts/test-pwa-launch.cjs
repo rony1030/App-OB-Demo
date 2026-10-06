@@ -5,7 +5,7 @@ const sharp = require('sharp');
 
 async function main() {
   const manifest = JSON.parse(fs.readFileSync('public/manifest.json', 'utf8'));
-  assert.equal(manifest.start_url, '/portal');
+  assert.equal(manifest.start_url, process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? '/inversionista' : '/portal');
   assert.equal(manifest.background_color, '#ffffff');
   assert.equal(manifest.theme_color, '#ffffff');
   for (const size of [180, 192, 512]) {

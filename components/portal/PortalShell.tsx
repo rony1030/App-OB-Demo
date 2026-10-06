@@ -13,10 +13,8 @@ import {
   ShieldCheck, SwatchBook, Tag, Terminal, UserRound, Users, Video, Webhook, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { logoutAction } from '@/app/auth/actions';
 import type { CurrentSessionUser } from '@/lib/auth/get-user';
 import { hasCapability, roleLabels, type RoleCapability } from '@/lib/auth/permissions';
-import { recordPresenceAction } from '@/app/portal/analytics-actions';
 import LanguageSwitcher from '@/components/i18n/LanguageSwitcher';
 import { useLocale } from '@/components/i18n/LocaleProvider';
 import type { TranslationKey } from '@/lib/i18n/locale';
@@ -52,6 +50,14 @@ const brokerNavigation: NavigationItem[] = [
   { label: 'agreements', href: '/portal/agreements', icon: FileSignature, capability: 'manage_agreements' }, { label: 'documents', href: '/portal/documentos', icon: FolderLock },
   { label: 'profile', href: '/portal/profile', icon: UserRound }, { label: 'support', href: '/portal/support', icon: LifeBuoy },
   { label: 'brand', href: '/portal/branding', icon: SwatchBook, capability: 'manage_agency' },
+];
+
+const demoNavigation: NavigationItem[] = [
+  { label: 'home', href: '/portal', icon: Grid2X2 },
+  { label: 'clients', href: '/portal/clientes', icon: Users },
+  { label: 'negotiations', href: '/portal/leads/new', icon: BarChart3 },
+  { label: 'projects', href: '/portal/developer', icon: Building2 },
+  { label: 'proposals', href: '/portal/proposals', icon: FileText },
 ];
 
 const adminNavigation: NavigationItem[] = [
@@ -97,6 +103,7 @@ export default function PortalShell({
   hasMasterReporting?: boolean;
 }) {
   const { t } = useLocale();
+  const isDemo = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -118,17 +125,17 @@ export default function PortalShell({
   const role = currentUser?.role;
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(routeMode);
   const availableModes = useMemo<WorkspaceMode[]>(() => {
-    const base: WorkspaceMode[] = role === 'super_admin'
+    const base: WorkspaceMode[] = isDemo ? ['commercial'] : role === 'super_admin'
     ? ['platform', 'commercial', 'administration', 'developer']
     : role === 'master_broker_admin' || role === 'master_broker_operations'
     ? ['commercial', 'administration']
     : role === 'developer_admin' || role === 'developer_viewer'
     ? ['developer']
     : ['commercial'];
-    return hasMasterReporting ? [...base, 'master_reporting'] : base;
-  }, [role, hasMasterReporting]);
+    return !isDemo && hasMasterReporting ? [...base, 'master_reporting'] : base;
+  }, [role, hasMasterReporting, isDemo]);
   const mode = availableModes.includes(workspaceMode) ? workspaceMode : availableModes[0];
-  const commercialNavigation: NavigationItem[] = currentUser?.role && hasCapability(currentUser.role, 'manage_agency_users')
+  const commercialNavigation: NavigationItem[] = isDemo ? demoNavigation : currentUser?.role && hasCapability(currentUser.role, 'manage_agency_users')
     ? [...brokerNavigation.slice(0, 2), { label: 'team', href: '/portal/admin/users', icon: Users }, ...brokerNavigation.slice(2)]
     : brokerNavigation;
   const navigation: NavigationItem[] =
@@ -161,6 +168,7 @@ export default function PortalShell({
   const orgName = currentUser?.organization?.name || 'OB Brokers Team';
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return;
     if (typeof window === 'undefined') return;
     const storageKey = 'ob_presence_session';
     let sessionKey = window.sessionStorage.getItem(storageKey);
@@ -168,11 +176,13 @@ export default function PortalShell({
       sessionKey = `${crypto.randomUUID().replace(/-/g, '')}`;
       window.sessionStorage.setItem(storageKey, sessionKey);
     }
-    const heartbeat = () => { void recordPresenceAction({ sessionKey: sessionKey!, surface: 'crm' }); };
+    const heartbeat = () => {
+      void import('@/app/portal/analytics-actions').then(({ recordPresenceAction }) => recordPresenceAction({ sessionKey: sessionKey!, surface: 'crm' }));
+    };
     heartbeat();
     const interval = window.setInterval(heartbeat, 60_000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [isDemo]);
 
   function selectWorkspace(nextMode: WorkspaceMode) {
     setWorkspaceMode(nextMode);
@@ -235,6 +245,7 @@ export default function PortalShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
                     'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors',
@@ -321,13 +332,17 @@ export default function PortalShell({
               </div>
               <Link
                 href="/portal/profile"
+                prefetch={false}
                 onClick={() => setUserMenuOpen(false)}
                 className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
               >
                 <UserRound className="h-4 w-4 text-slate-400" />
                 <span>{t('professionalProfile')}</span>
               </Link>
-              <form action={logoutAction}>
+              <form action={async () => {
+                if (isDemo) return (await import('@/app/auth/demo-actions')).logoutDemoAction();
+                return (await import('@/app/auth/actions')).logoutAction();
+              }}>
                 <button
                   type="submit"
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition"
@@ -363,6 +378,7 @@ export default function PortalShell({
           )}
           <UITranslationBoundary attributes={["aria-label"]}><Link
             href="/portal"
+            prefetch={false}
             aria-label="Ir al inicio del portal"
             className="flex h-12 min-w-0 flex-1 items-center justify-center lg:hidden"
           >
@@ -399,7 +415,7 @@ export default function PortalShell({
             )}
             <PwaManager />
             <LanguageSwitcher />
-            <NotificationBell />
+            {!isDemo && <NotificationBell />}
           </div>
         </header>
         {currentUser?.isPreviewMode && (

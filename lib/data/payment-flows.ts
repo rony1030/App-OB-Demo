@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { createAdminClient } from '@/lib/supabase/admin';
 import type { PaymentFlowPublic, PaymentReportMode } from '@/lib/investor/payment-report';
 
 /** Configuración completa de un flujo: SOLO servidor. */
@@ -97,6 +96,7 @@ interface ConfigRow {
 export async function getPaymentFlow(projectSlug: string, isDemo: boolean): Promise<PaymentFlowPrivate> {
   if (isDemo) return DEMO_FLOWS[projectSlug] ?? GENERIC_FLOW;
   try {
+    const { createAdminClient } = await import('@/lib/supabase/admin');
     const admin = createAdminClient();
     const { data } = await admin
       .from('project_payment_report_config' as never)

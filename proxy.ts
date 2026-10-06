@@ -5,29 +5,42 @@ export async function proxy(request: NextRequest) {
   const scope = (process.env.NEXT_PUBLIC_APP_SCOPE || 'all').trim().toLowerCase();
   const pathname = request.nextUrl.pathname;
 
+  // El despliegue demo es completamente autónomo: no inicializar auth ni
+  // cookies de Supabase en ninguna ruta.
+  if (scope === 'demo') {
+    if (pathname === '/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/inversionista/demo';
+      return NextResponse.redirect(url);
+    }
+    const isDemoPortalPath = pathname === '/portal' ||
+      pathname === '/portal/clientes' || /^\/portal\/clientes\/[^/]+$/.test(pathname) ||
+      pathname === '/portal/leads' || pathname === '/portal/leads/new' ||
+      pathname === '/portal/projects' || pathname === '/portal/inventory' ||
+      pathname === '/portal/proposals' || pathname === '/portal/proposals/new' ||
+      pathname === '/portal/developer';
+    const isDemoProposalApi = /^\/api\/public\/proposals\/[a-f0-9]{40}\/(decision|telemetry)$/i.test(pathname);
+    const isAllowedDemo =
+      pathname.startsWith('/inversionista') ||
+      pathname.startsWith('/login') ||
+      isDemoPortalPath ||
+      pathname.startsWith('/p/') ||
+      isDemoProposalApi ||
+      pathname.startsWith('/_next') ||
+      pathname === '/sw.js' ||
+      pathname === '/manifest.json' || pathname === '/robots.txt' || pathname === '/favicon.ico';
+    if (!isAllowedDemo) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname.startsWith('/portal') ? '/portal' : '/login';
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next({ request });
+  }
+
   // Manejo de Scopes de Despliegue modular en Vercel
   if (scope !== 'all') {
     // 1. ÁMBITO DEMO (Para videos tutoriales y pruebas aisladas)
-    if (scope === 'demo') {
-      if (pathname === '/') {
-        const url = request.nextUrl.clone();
-        url.pathname = '/inversionista/demo';
-        return NextResponse.redirect(url);
-      }
-      const isAllowedDemo =
-        pathname.startsWith('/inversionista/demo') ||
-        pathname.startsWith('/inversionista/CLI-') ||
-        pathname.startsWith('/login') ||
-        pathname.startsWith('/portal') ||
-        pathname.startsWith('/auth') ||
-        pathname.startsWith('/api') || pathname === '/manifest.json';
-
-      if (!isAllowedDemo) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/inversionista/demo';
-        return NextResponse.redirect(url);
-      }
-    } else if (scope === 'portals') {
+    if (scope === 'portals') {
       // 2. ÁMBITO PORTALS (Portal Inversionista + Portal Desarrollador)
       if (pathname === '/') {
         const url = request.nextUrl.clone();

@@ -662,6 +662,7 @@ async function attachLandingTheme(project: PortalProject): Promise<PortalProject
 }
 
 export async function getPortalProjects(): Promise<PortalProject[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [DEMO_PORTAL_PROJECT_VILLAS];
   const previewProjects = await getCanaRockPreviewProjects();
   try {
     const supabase = await createClient();
