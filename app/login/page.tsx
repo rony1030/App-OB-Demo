@@ -117,7 +117,7 @@ function LoginForm() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [emailValue, setEmailValue] = useState(isDemo ? 'soporte@osvaldobello.com' : '');
-  const [passwordValue, setPasswordValue] = useState('');
+  const [passwordValue, setPasswordValue] = useState(isDemo ? 'Soporte2026*' : '');
 
   if (forgotMode) {
     return <ForgotPasswordForm onBack={() => setForgotMode(false)} />;
@@ -329,6 +329,32 @@ function LoginForm() {
       )}
 
       {/* Footer Links */}
+      {isDemo && (
+        <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 text-center">
+            Accesos Rápidos de Demostración
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href="/inversionista/demo"
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-blue-900 transition text-center group"
+            >
+              <span className="text-xs font-extrabold group-hover:underline">Demo Inversionista</span>
+              <span className="text-[10px] text-blue-600 font-medium mt-0.5">Cartera y pagos</span>
+            </Link>
+            <div
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-center relative cursor-not-allowed select-none"
+              title="Portal del Desarrollador en preparación"
+            >
+              <span className="text-xs font-bold text-slate-600">Demo Developer</span>
+              <span className="text-[10px] text-amber-600 font-bold mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                Próximamente
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8 flex items-center justify-between text-xs text-slate-500">
         <Link href="/" className="font-semibold text-slate-600 hover:text-slate-900"><LocalizedText text={"← Volver a la página principal"} /></Link>
         <span><LocalizedText text={"Osvaldo Bello Group"} /></span>

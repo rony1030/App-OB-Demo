@@ -10,7 +10,7 @@ export async function proxy(request: NextRequest) {
   if (scope === 'demo') {
     if (pathname === '/') {
       const url = request.nextUrl.clone();
-      url.pathname = '/inversionista/demo';
+      url.pathname = '/login';
       return NextResponse.redirect(url);
     }
     const isDemoPortalPath = pathname === '/portal' ||
