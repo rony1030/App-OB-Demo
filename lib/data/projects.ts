@@ -1,3 +1,4 @@
+import { DEMO_PORTAL_PROJECT_VILLAS } from '@/lib/data/demo-villas-project';
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';

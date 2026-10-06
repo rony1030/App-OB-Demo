@@ -1,3 +1,4 @@
+import { addDemoContact } from '@/lib/demo/local-crm-store';
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -21,6 +22,58 @@ export type ActionResponse = {
 };
 
 export async function createLeadAction(formData: FormData): Promise<ActionResponse> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const name = (formData.get('name') as string)?.trim() || 'Nuevo Lead';
+    const email = (formData.get('email') as string)?.trim() || null;
+    const phone = (formData.get('phone') as string)?.trim() || '+1 809 000 0000';
+    const classification = (formData.get('classification') as string) || 'Inversionista';
+    const source = (formData.get('source') as string) || 'Demo Directo';
+    const projectName = (formData.get('project') as string) || 'Villas en Punta Cana';
+    const budgetMin = Number(formData.get('budgetMin')) || 450000;
+    const budgetMax = Number(formData.get('budgetMax')) || 650000;
+    const budgetCurrency = String(formData.get('budgetCurrency') || 'USD').trim().toUpperCase();
+    const id = Date.now();
+    const publicCode = 'CLI-' + Math.floor(1000 + Math.random() * 9000);
+    const nameParts = name.split(' ');
+    addDemoContact({
+      id,
+      firstName: nameParts[0] || name,
+      lastName: nameParts.slice(1).join(' ') || null,
+      fullName: name,
+      email,
+      phone,
+      publicCode,
+      phoneNormalized: phone.replace(/\D/g, ''),
+      phoneLast4: phone.slice(-4),
+      country: 'DO',
+      preferredLanguage: 'es',
+      classification,
+      source,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: [{ id: 1, name: 'Lead Demo', color: '#2563eb' }],
+      primaryOpportunity: {
+        id,
+        publicCode: 'OPP-' + Math.floor(1000 + Math.random() * 9000),
+        stage: 'Nuevo',
+        priority: 'Alta',
+        budgetMin,
+        budgetMax,
+        currency: budgetCurrency,
+        projectName,
+      },
+      dnd: { email: false, whatsapp: false, calls: false, sms: false },
+    });
+    revalidatePath('/portal/clientes');
+    revalidatePath('/portal/leads');
+    return {
+      success: true,
+      contactId: id,
+      contactPublicCode: publicCode,
+      contactReference: publicCode,
+      message: 'Lead creado con éxito en el entorno de demostración.',
+    };
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
 

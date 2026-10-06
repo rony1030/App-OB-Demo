@@ -1,3 +1,4 @@
+import { getDemoContacts } from '@/lib/demo/local-crm-store';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/get-user';
 import { getMyAgreements } from '@/lib/data/agreements';
@@ -76,6 +77,9 @@ export type ContactLeadReport = { id: number; publicCode: string; projectName: s
 export type ClientDocument = { id: number; publicCode: string; documentType: string; title: string; fileName: string; mimeType: string; sizeBytes: number; createdAt: string };
 
 export async function getContacts(): Promise<ContactSummary[]> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    return getDemoContacts();
+  }
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return [];

@@ -1,3 +1,4 @@
+import { getDemoProposals, addDemoProposal } from '@/lib/demo/local-crm-store';
 "use server";
 
 import { revalidatePath } from "next/cache";
