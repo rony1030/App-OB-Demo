@@ -1,5 +1,6 @@
-import { addDemoContact } from '@/lib/demo/local-crm-store';
 'use server';
+
+import { addDemoContact } from '@/lib/demo/local-crm-store';
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';

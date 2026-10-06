@@ -1,5 +1,6 @@
-import { getDemoProposals, addDemoProposal } from '@/lib/demo/local-crm-store';
 "use server";
+
+import { getDemoProposals, addDemoProposal } from '@/lib/demo/local-crm-store';
 
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
