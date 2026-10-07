@@ -117,6 +117,7 @@ export default function SimpleProposalCreator({
   selectedUnitIds,
   selectedLotTypologies = [],
   recipients,
+  initialRecipientId,
   activeOffers = [],
   canApplyManualDiscount = false,
   brokerName,
@@ -131,6 +132,7 @@ export default function SimpleProposalCreator({
   selectedUnitIds: string[];
   selectedLotTypologies?: ProposalLotSelection[];
   recipients: SimpleProposalRecipient[];
+  initialRecipientId?: number;
   activeOffers?: MarketingOffer[];
   canApplyManualDiscount?: boolean;
   brokerName?: string;
@@ -286,7 +288,7 @@ export default function SimpleProposalCreator({
     ].filter(Boolean)));
   }, [editGalleryImages, project.gallery, project.image, project.slug, project.typologies]);
   const [recipient, setRecipient] = useState<SimpleProposalRecipient | null>(() => {
-    if (!editMode) return null;
+    if (!editMode) return recipients.find((item) => item.id === initialRecipientId) || null;
     const snap = editMode.snapshot;
     if (snap.direct_investor) return null;
     if (snap.contact_id) {
@@ -301,12 +303,12 @@ export default function SimpleProposalCreator({
         phone: String(snap.client_phone || ''),
       };
     }
-    return null;
+    return recipients.find((item) => item.id === initialRecipientId) || null;
   });
   const [recipientQuery, setRecipientQuery] = useState('');
   const isDemoScope = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';
-  const [recipientExpanded, setRecipientExpanded] = useState(() => !editMode);
-  const [directInvestorMode, setDirectInvestorMode] = useState(() => isDemoScope ? true : Boolean(editMode?.snapshot?.direct_investor));
+  const [recipientExpanded, setRecipientExpanded] = useState(() => !editMode && !initialRecipientId);
+  const [directInvestorMode, setDirectInvestorMode] = useState(() => Boolean(editMode?.snapshot?.direct_investor));
   const [hideBrokerDetails, setHideBrokerDetails] = useState(true);
   const [coverImage, setCoverImage] = useState<string>(() => (editCoverBlock?.image as string) || project.image);
   const [storyImage, setStoryImage] = useState<string>(() => (editEditorialBlock?.image as string) || project.gallery[0] || project.image);
@@ -550,13 +552,20 @@ export default function SimpleProposalCreator({
   ])), [additionalTypologyIds, effectiveProposalItems]);
   const hasOfficialTypology = selectedTypologyIds.length > 0;
   const recipientName = recipient?.fullName || (directInvestorMode ? 'Inversionista' : '');
-  const proposalCode = useMemo(() => {
-    const existingCode = (editCoverBlock?.proposalCode as string) || (editMode?.snapshot?.proposalCode as string) || (editMode?.snapshot?.proposal_code as string);
-    if (existingCode) {
-      return existingCode.replace(/-inversio-/gi, '-inversion-');
+  const existingProposalCode = (editCoverBlock?.proposalCode as string) || (editMode?.snapshot?.proposalCode as string) || (editMode?.snapshot?.proposal_code as string);
+  const [proposalCodeSuffix, setProposalCodeSuffix] = useState('');
+  useEffect(() => {
+    // Proposal codes include a random suffix. Generate it only after hydration
+    // so the server HTML and the browser's first render contain the same text.
+    if (!existingProposalCode && recipientName) {
+      setProposalCodeSuffix((current) => current || Math.random().toString(36).slice(2, 6).toUpperCase());
     }
-    return recipientName ? generateProposalCode(proposalTheme.name || '', hideBrokerDetails ? '' : brokerName || '', recipientName) : '';
-  }, [brokerName, editCoverBlock?.proposalCode, editMode?.snapshot?.proposalCode, editMode?.snapshot?.proposal_code, hideBrokerDetails, proposalTheme.name, recipientName]);
+  }, [existingProposalCode, recipientName]);
+  const proposalCode = existingProposalCode
+    ? existingProposalCode.replace(/-inversio-/gi, '-inversion-')
+    : recipientName && proposalCodeSuffix
+      ? generateProposalCode(proposalTheme.name || '', hideBrokerDetails ? '' : brokerName || '', recipientName, proposalCodeSuffix)
+      : '';
   const blocks = useMemo(() => {
     const base = buildProposalBlocks(project, {
       coverImage,
@@ -827,92 +836,10 @@ export default function SimpleProposalCreator({
   const page = blocks[pageIndex];
 
   return (
-    <div className="-mx-4 min-h-[calc(100vh-5rem)] bg-[#f4f3ef] sm:-mx-6 lg:-mx-8">
-      <header className="sticky top-20 z-30 border-b border-slate-200 bg-white/95 px-3 py-2 shadow-xs backdrop-blur sm:px-6 sm:py-3">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-1.5 sm:gap-3">
-          <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
-            <UITranslationBoundary attributes={["aria-label"]}><Link
-              href="/portal/proposals"
-              aria-label="Volver a propuestas"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a1140] sm:h-10 sm:w-10 sm:rounded-xl"
-            >
-              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Link></UITranslationBoundary>
-            <div className="min-w-0 border-l border-slate-200 pl-1.5 sm:pl-3">
-              <p className="truncate text-[9px] font-bold uppercase tracking-[0.14em] text-[#8b7657] sm:text-[10px] sm:tracking-[0.18em]">
-                {editMode ? `Editar #${editMode.presentationId}` : <LocalizedText text={"Nueva propuesta"} />}
-              </p>
-              <h1 className="truncate text-xs font-extrabold text-[#0a1140] sm:text-base">{project.name}</h1>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            {shareResult && (
-              <>
-                <UITranslationBoundary attributes={["title","aria-label"]}><button
-                  type="button"
-                  onClick={copyShareLink}
-                  title={copied ? '¡Mensaje copiado!' : 'Copiar mensaje con enlace'}
-                  aria-label="Copiar mensaje"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 transition hover:bg-emerald-100 sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-xl sm:px-3"
-                >
-                  {copied ? <Check className="h-4 w-4 shrink-0 text-emerald-600" /> : <Copy className="h-4 w-4 shrink-0 text-emerald-700" />}
-                  <span className="hidden sm:inline text-xs font-bold">{copied ? <LocalizedText text={"¡Mensaje copiado!"} /> : 'Copiar mensaje'}</span>
-                </button></UITranslationBoundary>
-                <UITranslationBoundary attributes={["title","aria-label"]}><a
-                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                    `Hola, te comparto esta propuesta de inversión de *${project.name}*:\n${
-                      shareResult.url.startsWith('http')
-                        ? shareResult.url
-                        : typeof window !== 'undefined'
-                          ? `${window.location.origin}${shareResult.url}`
-                          : shareResult.url
-                    }`
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Compartir por WhatsApp"
-                  aria-label="Compartir por WhatsApp"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs transition hover:bg-emerald-700 sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-xl sm:px-3"
-                >
-                  <MessageCircle className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline text-xs font-bold"><LocalizedText text={"WhatsApp"} /></span>
-                </a></UITranslationBoundary>
-                <UITranslationBoundary attributes={["title","aria-label"]}><a
-                  href={shareResult.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Abrir propuesta"
-                  aria-label="Abrir propuesta"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-xl sm:px-3"
-                >
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                  <span className="hidden sm:inline text-xs font-bold"><LocalizedText text={"Abrir"} /></span>
-                </a></UITranslationBoundary>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={handleExport}
-              disabled={isExporting || !shareResult}
-              title={!shareResult ? 'Primero debes guardar la propuesta para descargar el PDF' : isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}
-              aria-label={!shareResult ? 'Primero debes guardar la propuesta para descargar el PDF' : isExporting ? `Generando PDF ${exportProgress}` : 'Descargar PDF'}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-xl sm:px-3"
-            >
-              {isExporting ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Download className="h-4 w-4 shrink-0" />}
-              <span className="hidden sm:inline text-xs font-bold">{isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving || !ready}
-              className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-[#0a1140] px-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#18205a] disabled:cursor-not-allowed disabled:opacity-45 sm:h-10 sm:rounded-xl sm:px-4 sm:gap-2"
-            >
-              {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Save className="h-4 w-4 shrink-0" />}
-              <span className="sm:hidden">{isSaving ? '...' : shareResult ? (editMode ? 'Listo' : 'Listo') : (editMode ? 'Guardar' : 'Guardar')}</span>
-              <span className="hidden sm:inline">{isSaving ? 'Guardando' : shareResult ? (editMode ? 'Actualizado ✓' : 'Guardado ✓') : (editMode ? 'Guardar cambios' : 'Guardar y compartir')}</span>
-            </button>
-          </div>
-        </div>
+    <div className="-mx-4 min-h-[calc(100vh-5rem)] bg-[#f4f3ef] pb-32 sm:-mx-6 lg:-mx-8">
+      <header className="mx-auto max-w-[1440px] px-4 pt-4 lg:px-6">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#8b7657]">{editMode ? `Editar #${editMode.presentationId}` : <LocalizedText text={"Nueva propuesta"} />}</p>
+        <h1 className="mt-1 text-lg font-extrabold text-[#0a1140] sm:text-xl">{project.name}</h1>
       </header>
 
       {shareResult && showSaveToast && (
@@ -921,7 +848,7 @@ export default function SimpleProposalCreator({
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
               <span className="font-extrabold"><LocalizedText text={"Propuesta guardada correctamente."} /></span>
-              <span className="hidden sm:inline text-emerald-700"><LocalizedText text={"El enlace privado está listo en la barra superior."} />{shareResult.emailStatus === 'sent' ? <LocalizedText text={" También se envió por correo al cliente."} /> : ''}
+              <span className="hidden sm:inline text-emerald-700"><LocalizedText text={"El enlace privado está listo en la barra inferior de acciones."} />{shareResult.emailStatus === 'sent' ? <LocalizedText text={" También se envió por correo al cliente."} /> : ''}
               </span>
             </div>
             <UITranslationBoundary attributes={["aria-label"]}><button
@@ -2017,61 +1944,37 @@ export default function SimpleProposalCreator({
         </div>
       </div></UITranslationBoundary>}
 
-      {/* Barra de acción flotante para móviles */}
-      <div className="fixed bottom-4 left-3 right-3 z-40 flex items-center justify-between gap-2 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-md sm:hidden">
-        <Link
-          href="/portal/proposals"
-          aria-label="Volver a propuestas"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition active:scale-95"
-        >
-          <ArrowLeft className="h-4 w-4" />
+      {/* Barra única de acciones flotante en móvil y escritorio */}
+      <nav aria-label="Acciones de la propuesta" className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-30 flex w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 items-center justify-between gap-2 rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-2xl backdrop-blur-md sm:gap-3 sm:p-2">
+        <Link href="/portal/proposals" aria-label="Volver a propuestas" title="Volver a propuestas" className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition hover:bg-slate-50 active:scale-95 sm:h-10 sm:w-auto sm:px-3">
+          <ArrowLeft className="h-4 w-4" /><span className="hidden text-xs font-bold sm:inline">Volver</span>
         </Link>
 
-        <div className="flex items-center gap-1.5">
-          {shareResult && (
-            <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `Hola, te comparto esta propuesta de inversión de *${project.name}*:\n${
-                  shareResult.url.startsWith('http')
-                    ? shareResult.url
-                    : typeof window !== 'undefined'
-                      ? `${window.location.origin}${shareResult.url}`
-                      : shareResult.url
-                }`
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-              title="Compartir por WhatsApp"
-              aria-label="Compartir por WhatsApp"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs transition active:scale-95"
-            >
-              <MessageCircle className="h-4 w-4 shrink-0" />
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          {shareResult && <>
+            <button type="button" onClick={copyShareLink} title={copied ? '¡Mensaje copiado!' : 'Copiar mensaje con enlace'} aria-label="Copiar mensaje con enlace" className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 transition hover:bg-emerald-100 active:scale-95 sm:h-10 sm:w-auto sm:px-3">
+              {copied ? <Check className="h-4 w-4 text-emerald-700" /> : <Copy className="h-4 w-4 text-emerald-700" />}<span className="hidden text-xs font-bold sm:inline">{copied ? 'Copiado' : 'Copiar enlace'}</span>
+            </button>
+            <a href={'https://api.whatsapp.com/send?text=' + encodeURIComponent('Hola, te comparto esta propuesta de inversión de *' + project.name + '*:\n' + (shareResult.url.startsWith('http') ? shareResult.url : (typeof window !== 'undefined' ? window.location.origin : '') + shareResult.url))} target="_blank" rel="noreferrer" title="Compartir por WhatsApp" aria-label="Compartir por WhatsApp" className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white shadow-xs transition hover:bg-emerald-700 active:scale-95 sm:h-10 sm:w-auto sm:px-3">
+              <MessageCircle className="h-4 w-4" /><span className="hidden text-xs font-bold sm:inline">WhatsApp</span>
             </a>
-          )}
+            <a href={shareResult.url} target="_blank" rel="noreferrer" title="Abrir propuesta" aria-label="Abrir propuesta" className="hidden h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-slate-700 transition hover:bg-slate-50 sm:inline-flex">
+              <ExternalLink className="h-4 w-4 text-slate-500" /><span className="text-xs font-bold">Abrir</span>
+            </a>
+          </>}
 
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={isExporting || !shareResult}
-            title={!shareResult ? 'Primero guarda la propuesta para descargar el PDF' : isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}
-            aria-label={!shareResult ? 'Primero guarda la propuesta para descargar el PDF' : isExporting ? `Generando PDF ${exportProgress}` : 'Descargar PDF'}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-xs transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white"
-          >
+          <button type="button" onClick={handleExport} disabled={isExporting || !shareResult} title={!shareResult ? 'Primero guarda la propuesta para descargar el PDF' : isExporting ? 'Generando PDF ' + exportProgress : 'Descargar PDF'} aria-label={!shareResult ? 'Primero guarda la propuesta para descargar el PDF' : isExporting ? 'Generando PDF ' + exportProgress : 'Descargar PDF'} className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white sm:h-10 sm:gap-1.5 sm:px-3">
             {isExporting ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Download className="h-4 w-4 shrink-0" />}
-            <span>{isExporting ? `PDF...` : 'PDF'}</span>
+            <span className="sm:hidden">PDF</span><span className="hidden sm:inline">{isExporting ? 'PDF ' + exportProgress : 'Descargar PDF'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving || !ready}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0a1140] px-4 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
-          >
+          <button type="button" onClick={handleSave} disabled={isSaving || !ready} className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-xl bg-[#0a1140] px-2.5 text-[11px] font-bold text-white shadow-md transition hover:bg-[#18205a] active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 sm:h-10 sm:gap-2 sm:px-4 sm:text-xs">
             {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Save className="h-4 w-4 shrink-0" />}
-            <span>{isSaving ? '...' : shareResult ? 'Guardado ✓' : 'Guardar'}</span>
+            <span className="sm:hidden">{isSaving ? '...' : shareResult ? 'Guardado ✓' : 'Guardar'}</span>
+            <span className="hidden sm:inline">{isSaving ? 'Guardando' : shareResult ? (editMode ? 'Actualizado ✓' : 'Guardado ✓') : (editMode ? 'Guardar cambios' : 'Guardar y compartir')}</span>
           </button>
         </div>
-      </div>
+      </nav>
 
       {isExporting && <div className="pointer-events-none fixed -left-[10000px] top-0 w-[816px]" aria-hidden="true">
         {blocks.map((block, index) => (

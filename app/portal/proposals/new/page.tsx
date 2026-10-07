@@ -12,7 +12,7 @@ import ProposalUnitChooser from '@/components/portal/proposals/ProposalUnitChoos
 import { getContacts } from '@/lib/data/crm';
 import { getActiveMarketingOffersForProject } from '@/lib/data/marketing-offers';
 
-export default async function NewProposalPage(props: { searchParams: Promise<{ project?: string; unit?: string; units?: string; selections?: string; kind?: string }> }) {
+export default async function NewProposalPage(props: { searchParams: Promise<{ project?: string; unit?: string; units?: string; selections?: string; kind?: string; contactId?: string }> }) {
   const searchParams = await props.searchParams;
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect('/login?next=/portal/proposals/new');
@@ -73,7 +73,7 @@ export default async function NewProposalPage(props: { searchParams: Promise<{ p
         </header>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((item, index) => (
-              <Link key={item.id} href={`/portal/proposals/new?project=${encodeURIComponent(item.slug)}`} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-md">
+            <Link key={item.id} href={`/portal/proposals/new?project=${encodeURIComponent(item.slug)}${searchParams.contactId ? `&contactId=${encodeURIComponent(searchParams.contactId)}` : ''}`} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-md">
               <div className="relative aspect-[16/8] overflow-hidden bg-slate-100"><OptimizedImage src={item.image} alt={item.name} fill priority={index === 0} sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover transition duration-300 group-hover:scale-[1.03]" /></div>
               <div className="p-4"><p className="text-sm font-extrabold text-slate-900">{item.name}</p><p className="mt-1 text-xs text-slate-500">{item.location}</p><p className="mt-3 text-xs font-bold text-blue-700"><LocalizedText text={"Crear propuesta "} /><span aria-hidden="true">→</span></p></div>
             </Link>
@@ -90,10 +90,12 @@ export default async function NewProposalPage(props: { searchParams: Promise<{ p
     const [unitId, typologyId] = entry.split(':');
     return { unitId, typologyId };
   }).filter((selection) => project.units.some((unit) => unit.id === selection.unitId) && project.typologies?.some((typology) => typology.id === selection.typologyId || typology.key === selection.typologyId)) || [];
-  if (!selectedUnits.length && !selections.length) return <ProposalUnitChooser project={project} />;
+  if (!selectedUnits.length && !selections.length) return <ProposalUnitChooser project={project} contactId={searchParams.contactId} />;
   const [contacts, activeOffers] = await Promise.all([
     getContacts(),
     getActiveMarketingOffersForProject(project.id),
   ]);
-  return <SimpleProposalCreator project={project} selectedUnitIds={selectedUnits} selectedLotTypologies={selections} recipients={contacts.map((contact) => ({ id: contact.id, fullName: contact.fullName, email: contact.email, phone: contact.phone, classification: contact.classification }))} activeOffers={activeOffers} canApplyManualDiscount={['super_admin', 'master_broker_admin'].includes(currentUser.role)} canUseDirectInvestor={['super_admin', 'master_broker_admin', 'agency_support'].includes(currentUser.role)} brokerName={currentUser.displayName} brokerPhone={currentUser.phone} brokerEmail={currentUser.email} brokerAvatarUrl={currentUser.avatarUrl} brokerProfessionalTitle={currentUser.professionalTitle} />;
+  const contactId = Number(searchParams.contactId);
+  const initialRecipientId = contacts.some((contact) => contact.id === contactId) ? contactId : undefined;
+  return <SimpleProposalCreator project={project} selectedUnitIds={selectedUnits} selectedLotTypologies={selections} recipients={contacts.map((contact) => ({ id: contact.id, fullName: contact.fullName, email: contact.email, phone: contact.phone, classification: contact.classification }))} initialRecipientId={initialRecipientId} activeOffers={activeOffers} canApplyManualDiscount={['super_admin', 'master_broker_admin'].includes(currentUser.role)} canUseDirectInvestor={['super_admin', 'master_broker_admin', 'agency_support'].includes(currentUser.role)} brokerName={currentUser.displayName} brokerPhone={currentUser.phone} brokerEmail={currentUser.email} brokerAvatarUrl={currentUser.avatarUrl} brokerProfessionalTitle={currentUser.professionalTitle} />;
 }

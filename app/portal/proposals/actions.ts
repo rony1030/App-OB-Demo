@@ -60,6 +60,7 @@ export type ProposalListItem = {
   sharedUrl?: string;
   sharedExpiresAt?: string;
   viewsCount?: number;
+  demoActivity?: Array<{ type: string; label: string; occurredAt: string; device?: string; location?: string; durationSeconds?: number }>;
   snapshot?: unknown;
   decision?: 'accepted' | 'rejected';
   decisionComment?: string;
@@ -93,7 +94,14 @@ export async function getProposalTrackingAction(presentationId: number): Promise
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
     const item = (await getDemoProposalsPersistent()).find((proposal) => proposal.id === presentationId);
     if (!item) return { error: 'Documento no encontrado o sin acceso.' };
-    return { data: { presentationId, title: item.title, kind: item.kind, clientName: item.clientName || 'Sin asignar', projectName: item.projectName || 'Villas en Punta Cana', views: item.viewsCount || 0, pdfs: 0, shares: 0, whatsappClicks: 0, averageDurationSeconds: 0, devices: [], locations: [], activity: [] } };
+    const activity = item.demoActivity || [];
+    const count = (types: string[]) => activity.filter((entry) => types.includes(entry.type)).length;
+    const aggregate = (key: 'device' | 'location') => Object.entries(activity.reduce<Record<string, number>>((result, entry) => {
+      if (entry[key]) result[entry[key]!] = (result[entry[key]!] || 0) + 1;
+      return result;
+    }, {})).map(([label, count]) => ({ label, count }));
+    const durations = activity.map((entry) => entry.durationSeconds).filter((value): value is number => typeof value === 'number' && value > 0);
+    return { data: { presentationId, title: item.title, kind: item.kind, clientName: item.clientName || 'Sin asignar', projectName: item.projectName || 'Villas en Punta Cana', views: Math.max(item.viewsCount || 0, count(['proposal_view', 'dossier_view'])), pdfs: count(['pdf_export']), shares: count(['share_click']), whatsappClicks: count(['whatsapp_click']), averageDurationSeconds: durations.length ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length) : 0, devices: aggregate('device'), locations: aggregate('location'), activity } };
   }
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -605,12 +613,21 @@ export async function saveProposalAction(payload: {
     const project = String(snapshot.project || snapshot.projectName || 'Villas en Punta Cana');
     const id = Date.now();
     const token = crypto.randomBytes(20).toString('hex');
+    const now = Date.now();
+    const sample = (minutesAgo: number, type: string, label: string, device: string, location: string, durationSeconds?: number) => ({ type, label, occurredAt: new Date(now - minutesAgo * 60_000).toISOString(), device, location, durationSeconds });
+    const demoActivity = [
+      sample(8, 'proposal_view', 'Consulta abierta', 'mobile', 'Santo Domingo, República Dominicana', 186),
+      sample(42, 'section_view', 'Consultó disponibilidad y precios', 'desktop', 'Santiago de los Caballeros, República Dominicana', 94),
+      sample(115, 'whatsapp_click', 'Hizo clic en contacto por WhatsApp', 'mobile', 'Punta Cana, República Dominicana'),
+      sample(238, 'pdf_export', 'Descargó el PDF de la propuesta', 'desktop', 'La Romana, República Dominicana'),
+      sample(512, 'share_click', 'Abrió el enlace compartido', 'tablet', 'Santo Domingo, República Dominicana'),
+    ];
     const item = {
       id, kind: payload.kind, title: payload.title.trim(), status: 'ready',
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       clientName, clientEmail, clientPhone, snapshot: payload.snapshot,
       projectName: project, projectSlug: 'villas-en-punta-cana',
-      currency: 'USD', sharedToken: token, sharedUrl: `/p/${token}`, viewsCount: 0,
+      currency: 'USD', sharedToken: token, sharedUrl: `/p/${token}`, viewsCount: 1, demoActivity,
     } satisfies ProposalListItem;
     await saveDemoProposal(item);
     revalidatePath('/portal/proposals');

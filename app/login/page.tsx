@@ -342,15 +342,13 @@ function LoginForm() {
               <span className="text-xs font-extrabold group-hover:underline">Demo Inversionista</span>
               <span className="text-[10px] text-blue-600 font-medium mt-0.5">Cartera y pagos</span>
             </Link>
-            <div
-              className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-center relative cursor-not-allowed select-none"
-              title="Portal del Desarrollador en preparación"
+            <Link
+              href="/portal/developer"
+              className="flex flex-col items-center justify-center p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 text-indigo-900 transition text-center group"
             >
-              <span className="text-xs font-bold text-slate-600">Demo Developer</span>
-              <span className="text-[10px] text-amber-600 font-bold mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                Próximamente
-              </span>
-            </div>
+              <span className="text-xs font-extrabold group-hover:underline">Demo Developer</span>
+              <span className="text-[10px] text-indigo-700 font-medium mt-0.5">Inventario y actividad</span>
+            </Link>
           </div>
         </div>
       )}
