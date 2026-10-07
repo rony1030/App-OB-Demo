@@ -8,42 +8,34 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Arquitectura Multi-Despliegue Vercel & Supabase
+# Reglas Operativas para el Agente en App-OB-Demo
 
-Este repositorio está preparado para funcionar tanto en despliegue unificado (Hostinger / VPS) como en múltiples proyectos independientes de Vercel utilizando el mismo código fuente conectado a GitHub.
+> **IMPORTANTE**: Este repositorio (`C:\Users\Rony\Documents\GitHub\App-OB-Demo` / `rony1030/App-OB-Demo`) es completamente **independiente** del repositorio principal.
+> Cualquier cambio que se realice aquí se destina única y exclusivamente a la aplicación demo pública en **`demo.osvaldobello.com`**.
+> **Nunca** aplicar cambios cruzados que afecten las bases de datos ni el código del repositorio principal `App OB Brokers`.
+
+## Plan y Hoja de Ruta
+Consulta detallada en [PLAN-DEMO.md](file:///C:/Users/Rony/Documents/GitHub/App-OB-Demo/PLAN-DEMO.md).
+
+## Flujo de Despliegue Vercel
+- **Team:** `rony-8f47`
+- **Proyecto:** `demo-osvaldobello`
+- **Token:** Vercel Personal Access Token
+- **Comando:** `npx vercel --prod --yes --token <TU_VERCEL_TOKEN>`
 
 ## 1. Identificación del Despliegue mediante `NEXT_PUBLIC_APP_SCOPE`
 
-Cada proyecto en Vercel debe definir la variable de entorno `NEXT_PUBLIC_APP_SCOPE`:
+En este repositorio, el valor siempre es:
+- `NEXT_PUBLIC_APP_SCOPE=demo`
 
-| Valor de `NEXT_PUBLIC_APP_SCOPE` | Subdominio Sugerido | Propósito & Rutas Activas |
-| :--- | :--- | :--- |
-| `demo` | `demo.osvaldobello.com` | **Paso 1:** Entorno para tutoriales/videos con el usuario `soporte@osvaldobello.com` (Proyecto aislado "Villas en Punta Cana") y `/inversionista/demo`. |
-| `portals` | `inversionistas.osvaldobello.com` | **Paso 2:** Portal del Inversionista (`/inversionista` con código OTP por email) y Portal del Desarrollador (`/portal/developer`). |
-| `crm` | `crm.osvaldobello.com` | **Paso 3:** CRM comercial para brokers y master broker (`/portal`, `/p/[token]`, simulador y propuestas). |
-| `public` | `brokers.osvaldobello.com` o `www.` | **Paso 4:** Catálogo general público y landings de proyectos (`/`, `/proyectos`, `/cana-rock`, etc.). |
-| `all` *(por defecto)* | Hostinger / Localhost | Ejecuta la suite completa sin filtros de rutas. |
+## 2. Variables de Entorno en Vercel
 
-## 2. Variables de Entorno Obligatorias en cada Cuenta de Vercel
-
-En cada proyecto de Vercel (en **Settings > Environment Variables**), deben cargarse:
-
-1. `NEXT_PUBLIC_APP_SCOPE`: `demo` (o `portals`, `crm`, `public` según corresponda).
-2. `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto Supabase.
-3. `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Anon Key de Supabase.
-4. `SUPABASE_SERVICE_ROLE_KEY`: Service Role Key para consultas administrativas seguras.
-5. `SMTP_HOST`: `smtp.hostinger.com` (para envío de OTPs y correos transaccionales).
-6. `SMTP_PORT`: `465`.
-7. `SMTP_USER`: Correo de envío transaccional.
-8. `SMTP_PASS`: Contraseña SMTP de Hostinger.
-9. `INVESTOR_DEMO_ACCESS_CODE`: Clave de acceso a `/inversionista/demo` (por defecto `DEMO2026`).
-
-## 3. Soporte y Gestión mediante Vercel CLI (para Agentes de IA)
-
-Para que el asistente de IA o CLI pueda inspeccionar despliegues, logs y errores de cada cuenta de Vercel:
-- **Token de Acceso:** Puedes generar un Vercel Personal Access Token en `vercel.com/account/tokens` y pasarlo en comandos:
-  ```bash
-  npx vercel --token <TU_VERCEL_TOKEN>
-  npx vercel logs <URL_DEL_DESPLIEGUE> --token <TU_VERCEL_TOKEN>
-  ```
-- **Identificación de Proyectos:** Cada despliegue de Vercel genera un Project ID (`prj_...`) y Team ID/User ID vinculados al repositorio.
+1. `NEXT_PUBLIC_APP_SCOPE`: `demo`
+2. `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto Supabase
+3. `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Anon Key de Supabase
+4. `SUPABASE_SERVICE_ROLE_KEY`: Service Role Key
+5. `SMTP_HOST`: `smtp.hostinger.com`
+6. `SMTP_PORT`: `465`
+7. `SMTP_USER`: Correo de envío transaccional
+8. `SMTP_PASS`: Contraseña SMTP
+9. `INVESTOR_DEMO_ACCESS_CODE`: `DEMO2026`
