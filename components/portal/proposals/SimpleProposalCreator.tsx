@@ -304,8 +304,9 @@ export default function SimpleProposalCreator({
     return null;
   });
   const [recipientQuery, setRecipientQuery] = useState('');
+  const isDemoScope = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';
   const [recipientExpanded, setRecipientExpanded] = useState(() => !editMode);
-  const [directInvestorMode, setDirectInvestorMode] = useState(() => Boolean(editMode?.snapshot?.direct_investor));
+  const [directInvestorMode, setDirectInvestorMode] = useState(() => isDemoScope ? true : Boolean(editMode?.snapshot?.direct_investor));
   const [hideBrokerDetails, setHideBrokerDetails] = useState(true);
   const [coverImage, setCoverImage] = useState<string>(() => (editCoverBlock?.image as string) || project.image);
   const [storyImage, setStoryImage] = useState<string>(() => (editEditorialBlock?.image as string) || project.gallery[0] || project.image);
@@ -827,7 +828,7 @@ export default function SimpleProposalCreator({
 
   return (
     <div className="-mx-4 min-h-[calc(100vh-5rem)] bg-[#f4f3ef] sm:-mx-6 lg:-mx-8">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-6 sm:py-3">
+      <header className="sticky top-20 z-30 border-b border-slate-200 bg-white/95 px-3 py-2 shadow-xs backdrop-blur sm:px-6 sm:py-3">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-1.5 sm:gap-3">
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
             <UITranslationBoundary attributes={["aria-label"]}><Link
@@ -892,10 +893,10 @@ export default function SimpleProposalCreator({
             <button
               type="button"
               onClick={handleExport}
-              disabled={isExporting}
-              title={isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}
-              aria-label={isExporting ? `Generando PDF ${exportProgress}` : 'Descargar PDF'}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60 sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-xl sm:px-3"
+              disabled={isExporting || !shareResult}
+              title={!shareResult ? 'Primero debes guardar la propuesta para descargar el PDF' : isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}
+              aria-label={!shareResult ? 'Primero debes guardar la propuesta para descargar el PDF' : isExporting ? `Generando PDF ${exportProgress}` : 'Descargar PDF'}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-xl sm:px-3"
             >
               {isExporting ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Download className="h-4 w-4 shrink-0" />}
               <span className="hidden sm:inline text-xs font-bold">{isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}</span>
@@ -989,7 +990,7 @@ export default function SimpleProposalCreator({
 
             {!collapsedSections.recipient && (
               <>
-                {canUseDirectInvestor && (
+                {!isDemoScope && canUseDirectInvestor && (
                   <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
                     <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#c5a880]/35 bg-[#fffaf1] p-3">
                       <input type="checkbox" checked={directInvestorMode} onChange={(event) => { setDirectInvestorMode(event.target.checked); setRecipient(event.target.checked ? null : recipient); setRecipientExpanded(!event.target.checked); setError(''); }} className="mt-0.5 rounded accent-[#0a1140]" />
@@ -2015,6 +2016,62 @@ export default function SimpleProposalCreator({
           </div>
         </div>
       </div></UITranslationBoundary>}
+
+      {/* Barra de acción flotante para móviles */}
+      <div className="fixed bottom-4 left-3 right-3 z-40 flex items-center justify-between gap-2 rounded-2xl border border-slate-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-md sm:hidden">
+        <Link
+          href="/portal/proposals"
+          aria-label="Volver a propuestas"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xs transition active:scale-95"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+
+        <div className="flex items-center gap-1.5">
+          {shareResult && (
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                `Hola, te comparto esta propuesta de inversión de *${project.name}*:\n${
+                  shareResult.url.startsWith('http')
+                    ? shareResult.url
+                    : typeof window !== 'undefined'
+                      ? `${window.location.origin}${shareResult.url}`
+                      : shareResult.url
+                }`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              title="Compartir por WhatsApp"
+              aria-label="Compartir por WhatsApp"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs transition active:scale-95"
+            >
+              <MessageCircle className="h-4 w-4 shrink-0" />
+            </a>
+          )}
+
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting || !shareResult}
+            title={!shareResult ? 'Primero guarda la propuesta para descargar el PDF' : isExporting ? `PDF ${exportProgress}` : 'Descargar PDF'}
+            aria-label={!shareResult ? 'Primero guarda la propuesta para descargar el PDF' : isExporting ? `Generando PDF ${exportProgress}` : 'Descargar PDF'}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-xs transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white"
+          >
+            {isExporting ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Download className="h-4 w-4 shrink-0" />}
+            <span>{isExporting ? `PDF...` : 'PDF'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !ready}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0a1140] px-4 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin shrink-0" /> : <Save className="h-4 w-4 shrink-0" />}
+            <span>{isSaving ? '...' : shareResult ? 'Guardado ✓' : 'Guardar'}</span>
+          </button>
+        </div>
+      </div>
 
       {isExporting && <div className="pointer-events-none fixed -left-[10000px] top-0 w-[816px]" aria-hidden="true">
         {blocks.map((block, index) => (
