@@ -14,6 +14,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { saveDossierAction, saveProposalAction, summarizeProposalConceptAction } from '@/app/portal/proposals/actions';
 import { isCanaRockProject, derivePricingCards } from '@/lib/portal/cana-rock-dossier';
 import { buildDossierTemplate } from '@/lib/portal/dossier-template';
+import { localizeDemoDossierAssets } from '@/lib/demo/localize-dossier-assets';
 import { CanaRockAmenityIcon, CANA_ROCK_ICON_OPTIONS, resolveIconKey } from '@/components/branding/CanaRockAmenityIcon';
 import { UVE_RESIDENCES_AMENITIES } from '@/lib/data/uve-residences';
 import { UVE_RESIDENCES_CANONICAL_UNITS } from '@/lib/data/uve-units';
@@ -602,7 +603,8 @@ function initialBlocks(project: PortalProject, kind: PresentationKind): Block[] 
   const proposalAccent = project.brandProfile?.accentColor || (isPalmView ? '#21412b' : '#c5a880');
   const proposalSurface = project.brandProfile?.surfaceColor || '#fcfbf9';
   if (kind === 'dossier') {
-    return buildDossierTemplate(project) as unknown as Block[];
+    const blocks = buildDossierTemplate(project);
+    return (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? localizeDemoDossierAssets(blocks, project) : blocks) as unknown as Block[];
   }
 
   if (kind === 'proposal') {

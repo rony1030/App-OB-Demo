@@ -150,18 +150,25 @@ export default function LeadWorkspace({
       formData.append('ownerMembershipId', String(targetMembershipId));
     }
 
-    const result = await createLeadAction(formData);
+    try {
+      const result = await createLeadAction(formData);
 
-    if (result.error) {
-      setError(result.error);
-      setStatus('error');
-    } else {
-      setStatus('saved');
-      if (result.contactPublicCode) {
-        router.push(`/portal/clientes/${result.contactPublicCode}`);
+      if (result.error) {
+        setError(result.error);
+        setStatus('error');
       } else {
-        router.push('/portal/clientes');
+        setStatus('saved');
+        if (result.contactPublicCode) {
+          router.push(`/portal/clientes/${result.contactPublicCode}`);
+        } else {
+          router.push('/portal/clientes');
+        }
       }
+    } catch {
+      setError(process.env.NEXT_PUBLIC_APP_SCOPE === 'demo'
+        ? 'No se pudo guardar el lead en este demo. Revisa el almacenamiento y vuelve a intentarlo.'
+        : 'No se pudo guardar el lead. Revisa tu conexión y vuelve a intentarlo.');
+      setStatus('error');
     }
   }
 

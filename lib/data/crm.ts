@@ -1,4 +1,5 @@
 import { getDemoContactsPersistent } from '@/lib/demo/local-crm-store';
+import { DEMO_PORTAL_PROJECTS } from '@/lib/demo/projects';
 import { readDemoState } from '@/lib/demo/local-store';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/get-user';
@@ -424,7 +425,24 @@ export async function getContactByCode(code: string): Promise<(ContactDetail & {
     const state = await readDemoState();
     const extra = state.contactDetails[String(contact.id)] ?? { notes: [], activities: [] };
     const stage = extra.stage || contact.primaryOpportunity?.stage || 'Nuevo';
-    return { ...contact, organizationId: 1, notes: extra.notes, activities: extra.activities as ContactDetail['activities'], opportunities: [{
+    const createdOpportunities = [...(extra.opportunities || [])].reverse().map((opportunity) => ({
+      id: opportunity.id,
+      publicCode: opportunity.publicCode,
+      stage: opportunity.stage,
+      priority: opportunity.priority,
+      budgetMin: null,
+      budgetMax: null,
+      currency: 'USD',
+      objective: 'Inversión',
+      nextFollowUpAt: null,
+      closedReason: null,
+      projects: opportunity.projectIds.flatMap((id) => {
+        const project = DEMO_PORTAL_PROJECTS.find((entry) => entry.id === id);
+        return project ? [{ id, name: project.name, slug: project.slug }] : [];
+      }),
+      units: [],
+    }));
+    return { ...contact, organizationId: 1, notes: extra.notes, activities: extra.activities as ContactDetail['activities'], opportunities: [...createdOpportunities, {
       id: contact.primaryOpportunity?.id || contact.id, publicCode: contact.primaryOpportunity?.publicCode || `OPP-${contact.id}`,
       stage, priority: contact.primaryOpportunity?.priority || 'Media', budgetMin: contact.primaryOpportunity?.budgetMin ?? null,
       budgetMax: contact.primaryOpportunity?.budgetMax ?? null, currency: contact.primaryOpportunity?.currency || 'USD',
@@ -725,7 +743,7 @@ export type AccessibleProject = {
 };
 
 export async function getAccessibleProjects(): Promise<AccessibleProject[]> {
-  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [{ id: 39, name: 'Villas en Punta Cana', slug: 'villas-en-punta-cana', developerName: 'Bello Valdez Enterprise' }];
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return DEMO_PORTAL_PROJECTS.map((project) => ({ id: project.id, name: project.name, slug: project.slug, developerName: project.developer }));
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return [];

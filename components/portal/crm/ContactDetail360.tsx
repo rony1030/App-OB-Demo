@@ -211,36 +211,36 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
     <div className="space-y-6 pb-20">
       {/* Top Header */}
       <div className="flex flex-col gap-4 border-b border-slate-200 bg-white p-4 rounded-2xl shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/portal/clientes" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition">
+        <div className="flex min-w-0 items-start gap-3">
+          <Link href="/portal/clientes" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">{contact.fullName}</h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1 className="min-w-0 break-words text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">{contact.fullName}</h1>
               <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 font-mono text-[10px] font-bold text-slate-500">{contact.publicCode}</span>
               {contact.classification && <span className="rounded-lg bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-700">{contact.classification}</span>}
             </div>
             <p className="text-xs text-slate-400 mt-0.5"><LocalizedText text={"Ficha 360 · Registrado el "} />{formatPortalDate(contact.createdAt)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
           <Link
             href={`/inversionista/${contact.publicCode}`}
             target="_blank"
             rel="noopener noreferrer"
             title="Abrir vista que ve el cliente con sus pagos, contratos y avances de obra"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-sm"
+            className="inline-flex min-w-0 min-h-10 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-2.5 text-center text-xs font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-100 sm:h-10 sm:px-3.5"
           >
             <ExternalLink className="h-4 w-4 text-indigo-600" />
             <LocalizedText text={"Portal Cliente"} />
           </Link>
           <LeadReportingDialog contactId={contact.id} contactName={contact.fullName} targets={reportTargets} reports={leadReports} />
-          <button type="button" onClick={() => setShowNewOppModal(true)} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-bold text-blue-800 hover:bg-blue-100 transition">
+          <button type="button" onClick={() => setShowNewOppModal(true)} className="inline-flex min-w-0 min-h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-2.5 text-center text-xs font-bold text-blue-800 transition hover:bg-blue-100 sm:h-10 sm:px-4">
             <Plus className="h-4 w-4" /><LocalizedText text={" Nueva Negociación"} /></button>
-          <a href={`https://wa.me/${contact.phoneNormalized || contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition">
+          <a href={`https://wa.me/${contact.phoneNormalized || contact.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 min-h-10 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-2.5 text-center text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 sm:h-10 sm:px-4">
             <MessageSquare className="h-4 w-4" /><LocalizedText text={" Chat WhatsApp"} /></a>
-          <Link href={`/portal/proposals/new?contactId=${contact.id}`} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition">
+          <Link href={`/portal/proposals/new?contactId=${contact.id}`} className="inline-flex min-w-0 min-h-10 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2.5 text-center text-xs font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 sm:h-10 sm:px-4">
             <FileText className="h-4 w-4" /><LocalizedText text={" Nueva Propuesta"} /></Link>
         </div>
       </div>
@@ -293,11 +293,11 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
             <div className="space-y-2.5">
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400"><LocalizedText text={"Campos Personalizados"} /></p>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-50">
+                <div className="flex flex-wrap justify-between gap-x-3 py-1 border-b border-slate-50">
                   <span className="text-slate-400"><LocalizedText text={"Origen"} /></span>
                   <span className="font-bold text-slate-800">{contact.source || 'Referido'}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
+                <div className="flex flex-wrap justify-between gap-x-3 py-1 border-b border-slate-50">
                   <span className="text-slate-400"><LocalizedText text={"País de Residencia"} /></span>
                   <span className="font-bold text-slate-800">{contact.country || 'No especificado'}</span>
                 </div>
@@ -341,25 +341,25 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
                 </div>
               </form>
             )}
-            <form onSubmit={handleAddNote} className="mt-4 border-t border-slate-100 pt-4 flex gap-2">
-              <UITranslationBoundary attributes={["placeholder"]}><input value={noteBody} onChange={(e) => setNoteBody(e.target.value)} placeholder="Escribe una nota rápida sobre este contacto..." className="h-10 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs outline-none focus:border-blue-400 focus:bg-white" /></UITranslationBoundary>
-              <button type="submit" disabled={isAddingNote || !noteBody.trim()} className="inline-flex h-10 items-center gap-1 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+            <form onSubmit={handleAddNote} className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row">
+              <UITranslationBoundary attributes={["placeholder"]}><input value={noteBody} onChange={(e) => setNoteBody(e.target.value)} placeholder="Escribe una nota rápida sobre este contacto..." className="h-10 min-w-0 w-full flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs outline-none focus:border-blue-400 focus:bg-white" /></UITranslationBoundary>
+              <button type="submit" disabled={isAddingNote || !noteBody.trim()} className="inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
                 <Send className="h-3.5 w-3.5" /><LocalizedText text={" Nota"} /></button>
             </form>
           </div>
 
           {/* Timeline Feed */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <p className="text-xs font-extrabold uppercase tracking-wider text-slate-800"><LocalizedText text={"Timeline Omnicanal"} /></p>
-              <div className="flex items-center gap-1 text-[11px] font-bold">
+            <div className="min-w-0 border-b border-slate-100 pb-3">
+              <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-slate-800"><LocalizedText text={"Timeline Omnicanal"} /></p>
+              <div className="flex max-w-full items-center gap-1 overflow-x-auto text-[11px] font-bold [scrollbar-width:thin]">
                 {[
                   { key: 'all' as const, label: `Todo (${timelineItems.length})` },
                   { key: 'notes' as const, label: 'Notas' },
                   { key: 'activities' as const, label: 'Llamadas/WhatsApp' },
                   { key: 'tasks' as const, label: 'Tareas' },
                 ].map((tab) => (
-                  <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={cn('px-2.5 py-1 rounded-lg transition', activeTab === tab.key ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100')}>
+                  <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} className={cn('shrink-0 whitespace-nowrap px-2.5 py-1 rounded-lg transition', activeTab === tab.key ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100')}>
                     {tab.label}
                   </button>
                 ))}
@@ -379,12 +379,12 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
                   const isCall = item.type === 'call';
                   const isWhatsapp = item.type === 'whatsapp';
                   return (
-                    <div key={item.id} className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition hover:bg-slate-50">
+                  <div key={item.id} className="flex min-w-0 gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition hover:bg-slate-50">
                       <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm', isNote ? 'bg-blue-600' : isTask ? 'bg-amber-600' : isCall ? 'bg-purple-600' : isWhatsapp ? 'bg-emerald-600' : 'bg-slate-600')}>
                         {isNote ? <FileText className="h-4 w-4" /> : isTask ? <Clock className="h-4 w-4" /> : isCall ? <Phone className="h-4 w-4" /> : isWhatsapp ? <MessageSquare className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                           <p className="font-bold text-slate-900 text-xs">{item.title}</p>
                           <span className="text-[10px] text-slate-400">{formatPortalTime(item.date)} · {formatPortalDate(item.date)}</span>
                         </div>

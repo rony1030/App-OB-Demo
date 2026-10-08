@@ -1,6 +1,7 @@
 'use server';
 
 import { getDemoContactsPersistent, saveDemoContact } from '@/lib/demo/local-crm-store';
+import { DEMO_PORTAL_PROJECTS } from '@/lib/demo/projects';
 import { updateDemoState } from '@/lib/demo/local-store';
 
 import { revalidatePath } from 'next/cache';
@@ -712,6 +713,32 @@ export async function createOpportunityAction(
   contactId: number,
   projectId?: number
 ): Promise<ActionResponse> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const contacts = await getDemoContactsPersistent();
+    const contact = contacts.find((entry) => entry.id === contactId);
+    if (!contact) return { error: 'Contacto no encontrado en los datos locales del demo.' };
+    if (projectId && !DEMO_PORTAL_PROJECTS.some((project) => project.id === projectId)) return { error: 'El proyecto seleccionado no está disponible en el demo.' };
+
+    const opportunityId = Date.now();
+    const opportunityCode = `OPP-${opportunityId}`;
+    await updateDemoState((state) => {
+      const detail = state.contactDetails[String(contactId)] ??= { notes: [], activities: [] };
+      detail.opportunities ??= [];
+      detail.opportunities.unshift({
+        id: opportunityId,
+        publicCode: opportunityCode,
+        stage: 'new',
+        priority: 'medium',
+        projectIds: projectId ? [projectId] : [],
+        createdAt: new Date().toISOString(),
+      });
+    });
+    revalidatePath('/portal/clientes', 'layout');
+    revalidatePath('/portal/clientes');
+    revalidatePath(`/portal/clientes/${contact.publicCode}`);
+    return { success: true, message: 'Negociación creada en los datos locales del demo.' };
+  }
+
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser?.membershipId) return { error: 'Tu sesión expiró.' };

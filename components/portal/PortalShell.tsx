@@ -366,7 +366,7 @@ export default function PortalShell({
           >
             <Menu className="h-5 w-5" />
           </button></UITranslationBoundary>
-          {currentUser?.realRole === 'super_admin' && (
+          {!isDemo && currentUser?.realRole === 'super_admin' && (
             <div className="shrink-0 lg:hidden">
               <UserSwitcher
                 isPreviewMode={currentUser.isPreviewMode}
@@ -404,7 +404,7 @@ export default function PortalShell({
             {currentUser && !currentUser.isPreviewMode && (
               <OrganizationSwitcher memberships={currentUser.availableMemberships} activeId={currentUser.membershipId} />
             )}
-            {currentUser?.realRole === 'super_admin' && (
+            {!isDemo && currentUser?.realRole === 'super_admin' && (
               <div className="hidden lg:block">
                 <UserSwitcher
                   isPreviewMode={currentUser.isPreviewMode}

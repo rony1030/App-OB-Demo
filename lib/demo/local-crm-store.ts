@@ -7,6 +7,9 @@
 import type { ContactSummary } from '@/lib/data/crm';
 import type { ProposalListItem } from '@/app/portal/proposals/actions';
 import { readDemoState, updateDemoState } from '@/lib/demo/local-store';
+import { DEMO_PORTAL_PROJECTS } from '@/lib/demo/projects';
+import { buildDossierTemplate } from '@/lib/portal/dossier-template';
+import { localizeDemoDossierAssets } from '@/lib/demo/localize-dossier-assets';
 
 // Contactos iniciales de demostración
 export const INITIAL_DEMO_CONTACTS: ContactSummary[] = [
@@ -189,7 +192,36 @@ export function getDemoProposals(): ProposalListItem[] {
 
 export async function getDemoProposalsPersistent(): Promise<ProposalListItem[]> {
   const persisted = await readDemoState();
-  return persisted.proposals as ProposalListItem[];
+  const seedDossiers: ProposalListItem[] = DEMO_PORTAL_PROJECTS.map((project, index) => {
+    const sharedToken = `demo-dossier-${project.slug}`;
+    return {
+      id: 8100 + index,
+      kind: 'dossier',
+      title: `${project.name} · Dossier Oficial`,
+      status: 'ready',
+      createdAt: '2026-10-01T12:00:00.000Z',
+      updatedAt: '2026-10-01T12:00:00.000Z',
+      projectName: project.name,
+      projectSlug: project.slug,
+      projectPrice: project.startingPrice,
+      currency: project.currency || 'USD',
+      coverImage: project.image,
+      sharedToken,
+      sharedUrl: `/p/${sharedToken}`,
+      viewsCount: 0,
+      snapshot: {
+        kind: 'dossier',
+        project: project.name,
+        project_slug: project.slug,
+        blocks: localizeDemoDossierAssets(buildDossierTemplate(project), project),
+        branding: { name: 'OB Brokers Team', primary_color: '#0f172a', accent_color: '#2563eb' },
+      },
+      demoActivity: [],
+    };
+  });
+  const saved = persisted.proposals as ProposalListItem[];
+  const savedIds = new Set(saved.map((item) => item.id));
+  return [...seedDossiers.filter((item) => !savedIds.has(item.id)), ...saved];
 }
 
 export function addDemoProposal(prop: ProposalListItem) {
@@ -198,7 +230,10 @@ export function addDemoProposal(prop: ProposalListItem) {
 }
 
 export async function saveDemoProposal(prop: ProposalListItem) {
-  await updateDemoState((state) => { state.proposals.unshift(prop); });
+  await updateDemoState((state) => {
+    state.proposals = state.proposals.filter((item) => (item as ProposalListItem).id !== prop.id);
+    state.proposals.unshift(prop);
+  });
 }
 
 export async function updateDemoProposal(id: number, update: (proposal: ProposalListItem) => ProposalListItem | null) {

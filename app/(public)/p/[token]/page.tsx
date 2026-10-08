@@ -188,6 +188,30 @@ export default async function PublicProposalPage(props: {
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
     const saved = (await getDemoProposalsPersistent()).find((item) => item.sharedToken === token && item.status !== 'archived');
     const snapshot = saved?.snapshot as Record<string, unknown> | undefined;
+    if (saved?.kind === 'dossier' && saved.status === 'ready' && Array.isArray(snapshot?.blocks)) {
+      await updateDemoProposalByToken(token, (item) => ({
+        ...item,
+        viewsCount: (item.viewsCount || 0) + 1,
+        demoActivity: [
+          ...(item.demoActivity || []),
+          { type: 'dossier_view', label: 'Dossier abierto', occurredAt: new Date().toISOString(), device: 'mobile', location: 'Santo Domingo, República Dominicana', durationSeconds: 96 },
+        ],
+      }));
+      return (
+        <PublicDossierViewer
+          blocks={snapshot.blocks as SlideBlock[]}
+          title={saved.title}
+          projectName={saved.projectName || 'Proyecto demo'}
+          projectSlug={saved.projectSlug || 'demo'}
+          brokerName="Soporte OB Brokers"
+          brokerPhone=""
+          agencyName="OB Brokers Team"
+          clientName=""
+          token={token}
+          initialLocale={initialLocale}
+        />
+      );
+    }
     const items = Array.isArray(snapshot?.items) ? snapshot.items as MultiPropertyProposal['items'] : [];
     if (!saved || !items.length) return <LinkUnavailable reason="Verifica que copiaste el enlace completo, o solicita una propuesta nueva a tu asesor." />;
     const branding = snapshot?.branding as { name?: string; logo_url?: string; primary_color?: string; accent_color?: string; surface_color?: string } | undefined;

@@ -1,4 +1,4 @@
-import { DEMO_PORTAL_PROJECT_VILLAS } from '@/lib/data/demo-villas-project';
+import { DEMO_PORTAL_PROJECTS, getDemoProjectBySlug } from '@/lib/demo/projects';
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
@@ -662,7 +662,7 @@ async function attachLandingTheme(project: PortalProject): Promise<PortalProject
 }
 
 export async function getPortalProjects(): Promise<PortalProject[]> {
-  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return [DEMO_PORTAL_PROJECT_VILLAS];
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return DEMO_PORTAL_PROJECTS;
   const previewProjects = await getCanaRockPreviewProjects();
   try {
     const supabase = await createClient();
@@ -746,6 +746,7 @@ export async function getPublicProject(slug: string): Promise<PortalProject | nu
 }
 
 export async function getPortalProject(slug: string): Promise<PortalProject | null> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return getDemoProjectBySlug(slug);
   try {
     const supabase = await createClient();
     const { data, error } = await supabase

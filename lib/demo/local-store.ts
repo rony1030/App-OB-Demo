@@ -12,7 +12,7 @@ export type DemoState = {
   investors: Record<string, { email: string; session: boolean; paymentReports: unknown[] }>;
   investorOtps: Record<string, { code: string; expiresAt: number }>;
   investorSession?: { code: string; email: string } | null;
-  contactDetails: Record<string, { notes: Array<{ id: number; body: string; createdAt: string; createdByName: string }>; activities: Array<{ id: number; kind: string; subject: string; details: string | null; dueAt: string | null; completedAt: string | null; createdAt: string }>; stage?: string }>;
+  contactDetails: Record<string, { notes: Array<{ id: number; body: string; createdAt: string; createdByName: string }>; activities: Array<{ id: number; kind: string; subject: string; details: string | null; dueAt: string | null; completedAt: string | null; createdAt: string }>; stage?: string; opportunities?: Array<{ id: number; publicCode: string; stage: string; priority: string; projectIds: number[]; createdAt: string }> }>;
 };
 
 const empty: DemoState = { contacts: [], proposals: [], investors: {}, investorOtps: {}, investorSession: null, contactDetails: {} };

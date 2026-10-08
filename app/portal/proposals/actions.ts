@@ -1012,6 +1012,48 @@ export async function saveDossierAction(payload: {
   snapshot: Json;
   publish: boolean;
 }): Promise<SaveProposalResponse> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const project = await getPortalProject(payload.projectSlug);
+    const snapshot = payload.snapshot as Record<string, unknown>;
+    if (!project || snapshot.kind !== 'dossier' || snapshot.project_slug !== project.slug || !Array.isArray(snapshot.blocks) || !snapshot.blocks.length) {
+      return { error: 'El dossier no corresponde a un proyecto válido del demo.' };
+    }
+    const existing = payload.presentationId
+      ? (await getDemoProposalsPersistent()).find((item) => item.id === payload.presentationId && item.kind === 'dossier')
+      : undefined;
+    if (payload.presentationId && !existing) return { error: 'El dossier no existe en el almacenamiento local del demo.' };
+    const id = existing?.id || Date.now();
+    const token = payload.publish ? (existing?.sharedToken || crypto.randomBytes(20).toString('hex')) : undefined;
+    const now = new Date().toISOString();
+    const item: ProposalListItem = {
+      ...(existing || {}),
+      id,
+      kind: 'dossier',
+      title: `${project.name} · Dossier Oficial`,
+      status: payload.publish ? 'ready' : 'draft',
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+      projectName: project.name,
+      projectSlug: project.slug,
+      projectPrice: project.startingPrice,
+      currency: project.currency || 'USD',
+      coverImage: project.image,
+      sharedToken: token,
+      sharedUrl: token ? `/p/${token}` : undefined,
+      snapshot: payload.snapshot,
+      viewsCount: existing?.viewsCount || 0,
+      demoActivity: existing?.demoActivity || [],
+    };
+    if (existing) {
+      const updated = await updateDemoProposal(id, () => item);
+      if (!updated) await saveDemoProposal(item);
+    } else await saveDemoProposal(item);
+    revalidatePath('/portal/proposals');
+    revalidatePath(`/portal/projects/${project.slug}/dossier`);
+    if (token) revalidatePath(`/p/${token}`);
+    return { success: true, presentationId: id, status: item.status as 'draft' | 'ready', token, url: token ? `/p/${token}` : undefined };
+  }
+
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   const orgId = currentUser?.organization?.id;
@@ -1383,6 +1425,26 @@ export async function getProposalForEditAction(presentationId: number): Promise<
   error?: string;
   viewUrl?: string;
 }> {
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const saved = (await getDemoProposalsPersistent()).find((item) => item.id === presentationId && item.status !== 'archived');
+    const snapshot = saved?.snapshot as Record<string, unknown> | undefined;
+    if (!saved || !snapshot) return { error: 'Documento no encontrado en el almacenamiento local del demo.' };
+    if (saved.kind === 'dossier' && !Array.isArray(snapshot.blocks)) return { error: 'El dossier no tiene páginas para editar.' };
+    return {
+      data: {
+        presentationId: saved.id,
+        title: saved.title,
+        kind: saved.kind,
+        contactId: undefined,
+        projectSlug: saved.projectSlug,
+        token: saved.sharedToken,
+        url: saved.sharedUrl,
+        authorMembershipId: 1,
+        snapshot,
+      },
+    };
+  }
+
   const supabase = await createClient();
   const currentUser = await getCurrentUser(supabase);
   if (!currentUser) return { error: 'Debes iniciar sesión para editar propuestas.' };
@@ -1770,6 +1832,15 @@ export async function getLatestSavedPresentationAction(params: {
   kind?: "proposal" | "dossier";
 }): Promise<{ presentationId: number; status: string; blocks?: Block[]; snapshot?: SavedPresentationSnapshot } | null> {
   try {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      if (params.kind !== 'dossier') return null;
+      const saved = (await getDemoProposalsPersistent())
+        .filter((item) => item.kind === 'dossier' && item.status !== 'archived')
+        .find((item) => item.projectSlug === params.projectSlug || item.projectName?.toLowerCase() === params.projectName?.toLowerCase());
+      const snapshot = saved?.snapshot as SavedPresentationSnapshot | undefined;
+      if (!saved || !Array.isArray(snapshot?.blocks)) return null;
+      return { presentationId: saved.id, status: saved.status, blocks: snapshot.blocks, snapshot };
+    }
     const supabase = await createClient();
     const currentUser = await getCurrentUser();
     if (params.kind === 'dossier' && !hasCapability(currentUser?.role, 'edit_project_dossier')) return null;
