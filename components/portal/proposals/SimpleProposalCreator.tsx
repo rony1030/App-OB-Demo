@@ -1330,7 +1330,7 @@ export default function SimpleProposalCreator({
                             <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={"Generando…"} /></span>
                           </>
                         ) : (
-                            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redactar (demo)' : 'Rehacer con IA'} /></span>
+                            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redactar' : 'Rehacer con IA'} /></span>
                         )}
                       </span>
                     </button></UITranslationBoundary>
@@ -1359,7 +1359,7 @@ export default function SimpleProposalCreator({
                             <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={"Generando…"} /></span>
                           </>
                         ) : (
-                            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redactar (demo)' : 'Rehacer con IA'} /></span>
+                            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redactar' : 'Rehacer con IA'} /></span>
                         )}
                       </span>
                     </button></UITranslationBoundary>
