@@ -425,7 +425,7 @@ export default function PortalShell({
             </span>
           </div>
         )}
-        <main className="mx-auto min-h-[calc(100vh-5rem)] min-w-0 max-w-[1500px] overflow-x-hidden p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto min-h-[calc(100vh-5rem)] min-w-0 max-w-[1500px] overflow-x-clip p-4 sm:p-6 lg:p-8">
           <MarketingOfferSpotlight offers={marketingOffers} />
           {children}
         </main>
