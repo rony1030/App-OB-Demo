@@ -41,7 +41,13 @@ const SAMPLE: Record<string, { name: string; photos: string[]; progress: [number
 const STAGES = ['Terminaciones y entrega', 'Acabados interiores', 'Estructura y mampostería'];
 
 export function getDemoConstructionUpdates(slug: string, asOf: Date = new Date()): ProjectConstructionUpdate[] {
-  const sample = SAMPLE[slug];
+  const fictional: Record<string, { name: string; photos: string[]; progress: [number, number, number] }> = {
+    'villas-en-punta-cana': { name: 'Villas en Punta Cana', photos: ['/demo-projects/villas-punta-cana.png'], progress: [75, 65, 55] },
+    'villas-bahia-coral': { name: 'Villas Bahía Coral', photos: ['/demo-projects/villas-bahia-coral.png'], progress: [65, 55, 45] },
+    'apartamentos-brisa-caribe': { name: 'Apartamentos Brisa Caribe', photos: ['/demo-projects/apartamentos-brisa-caribe.png'], progress: [55, 45, 35] },
+    'casas-campo-verde': { name: 'Casas Campo Verde', photos: ['/demo-projects/casas-campo-verde.png'], progress: [80, 70, 60] },
+  };
+  const sample = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? fictional[slug] : SAMPLE[slug];
   if (!sample) return [];
   return sample.progress.map((progress, i) => {
     const date = new Date(asOf.getFullYear(), asOf.getMonth() - i, 5);

@@ -15,6 +15,9 @@ import UnitOverview from '@/components/portal/investor/UnitOverview';
 import UnitPicker from '@/components/portal/investor/UnitPicker';
 import LogoutButton from '@/components/portal/investor/LogoutButton';
 import { formatMoney, whatsappLink } from '@/components/portal/investor/status';
+import { useWorkflow } from '@/lib/demo/use-workflow';
+import { PAYMENT_DELAY_MS } from '@/lib/demo/browser-workflow';
+import { computeAccount } from '@/lib/investor/account';
 
 const TABS: { key: PortalTab; label: string; short: string; icon: LucideIcon }[] = [
   { key: 'summary', label: 'Mi unidad', short: 'Unidad', icon: Home },
@@ -25,7 +28,17 @@ const TABS: { key: PortalTab; label: string; short: string; icon: LucideIcon }[]
 
 const NEEDS_ATTENTION = new Set(['vencida', 'en_legal', 'proceso_entrega']);
 
-export default function InvestorPortalDashboard({ data }: { data: InvestorPortalData }) {
+export default function InvestorPortalDashboard({ data: seedData }: { data: InvestorPortalData }) {
+  const workflow = useWorkflow();
+  const data = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? { ...seedData, reservations: seedData.reservations.map(reservation => {
+    const reports = workflow.state.investorReports.filter(report => report.code === seedData.contact.publicCode && report.reservationId === reservation.reservationId);
+    const installments = reservation.account.schedule.map(row => ({ ...row }));
+    for (const report of reports.filter(item => Date.now() >= Date.parse(item.reportedAt) + PAYMENT_DELAY_MS)) {
+      let remaining = report.amount;
+      for (const row of installments) { const applied = Math.min(remaining, Math.max(0, row.amount - row.paidAmount)); row.paidAmount += applied; if (applied > 0) row.paidAt = report.paidAt; remaining -= applied; }
+    }
+    return { ...reservation, account: computeAccount({ price: reservation.price, installments, deliveryStatus: reservation.deliveryStatus, collectionStatus: reservation.collectionStatus }), receipts: [...reservation.receipts, ...reports.map(report => ({ id: report.id, label: report.reference, amount: report.amount, currency: reservation.currency, paidAt: report.paidAt, status: Date.now() >= Date.parse(report.reportedAt) + PAYMENT_DELAY_MS ? 'approved' as const : 'pending' as const }))] };
+  }) } : seedData;
   const [tab, setTab] = useState<PortalTab>('summary');
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
@@ -75,7 +88,7 @@ export default function InvestorPortalDashboard({ data }: { data: InvestorPortal
   return (
     <div className="min-h-screen bg-[#F5F8FC] pb-28 text-[#101826] selection:bg-[#0C094E] selection:text-white md:pb-20">
       <div className="sticky top-0 z-50">
-        {data.isDemo && (
+        {data.isDemo && process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo' && (
           <div className="bg-[#E8E8F7] px-5 py-2 text-center text-xs text-[#0C094E] sm:text-sm border-b border-[#DCE3EE]">
             Modo demostración · datos ficticios ·{' '}
             <Link href="/inversionista" className="font-semibold underline underline-offset-4 hover:text-[#24207A]">

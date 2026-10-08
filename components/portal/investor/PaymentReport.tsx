@@ -6,6 +6,7 @@ import { reportPaymentAction, type ReportPaymentResult } from '@/app/(public)/in
 import type { InvestorAdvisor, InvestorReservationItem } from '@/lib/data/investor-portal';
 import { PAYMENT_METHODS } from '@/lib/investor/payment-report';
 import { formatMoney, whatsappLink } from './status';
+import { changeWorkflow, saveWorkflowFile } from '@/lib/demo/browser-workflow';
 
 const field =
   'mt-1.5 block min-h-12 w-full rounded-lg border border-[#DCE3EE] bg-white px-3.5 text-base text-[#101826] placeholder:text-[#94A3B8] focus:border-[#24207A] focus:outline focus:outline-2 focus:outline-[#24207A]/20 disabled:bg-[#F5F8FC]';
@@ -45,9 +46,19 @@ export default function PaymentReport({
     formData.set('reservationId', String(unit.reservationId));
     startTransition(async () => {
       try {
+        if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+          const amount = Number(formData.get('amount'));
+          const paidAt = String(formData.get('paidAt') || '');
+          if (!Number.isFinite(amount) || amount <= 0 || amount > unit.account.remainingBalance) throw new Error('Revisa el monto; no puede superar el saldo pendiente.');
+          const file = formData.get('receipt');
+          const receipt = file instanceof File && file.size ? await saveWorkflowFile(unit.reservationId, file, 'Comprobante de pago') : undefined;
+          changeWorkflow(state => { state.investorReports.push({ id: crypto.randomUUID(), code, reservationId: unit.reservationId, amount, paidAt: paidAt || new Date().toISOString(), reportedAt: new Date().toISOString(), reference: String(formData.get('reference') || 'Transferencia bancaria'), receiptId: receipt?.id }); });
+          setResult({ ok: true, message: 'Comprobante recibido. Verificando pago para actualizar tu estado de cuenta.' });
+          return;
+        }
         setResult(await reportPaymentAction(formData));
-      } catch {
-        setResult({ ok: false, error: 'No se pudo enviar el reporte. Revise su conexión e intente de nuevo.' });
+      } catch (cause) {
+        setResult({ ok: false, error: cause instanceof Error ? cause.message : 'No se pudo enviar el reporte. Revise su conexión e intente de nuevo.' });
       }
     });
   };
@@ -59,7 +70,7 @@ export default function PaymentReport({
     <section aria-labelledby="report-title" className="rounded-xl border border-[#DCE3EE] bg-[#F8FAFD] p-5 sm:p-6">
       <h3 id="report-title" className="font-display text-xl text-[#101826]">Reportar un pago</h3>
       <p className="mt-1 text-sm text-[#5B6472]">
-        {isDemo
+        {isDemo && process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo'
           ? 'En esta demostración, el reporte se guardará localmente y no se enviará a ningún proveedor.'
           : canSubmit
           ? `Su reporte se envía a ${flow.developerName} para verificar el pago y aplicarlo a su estado de cuenta.`
@@ -100,7 +111,7 @@ export default function PaymentReport({
             <CheckCircle2 className="h-5 w-5" aria-hidden /> Reporte enviado
           </p>
           <p className="mt-1 text-sm text-[#3d4655]">{result.message}</p>
-          {result.demo && <p className="mt-2 text-xs text-[#6B7280]">Guardado únicamente en los datos locales de este demo. No se envió correo ni se contactó a un proveedor.</p>}
+          {result.demo && process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo' && <p className="mt-2 text-xs text-[#6B7280]">Guardado únicamente en los datos locales de este demo. No se envió correo ni se contactó a un proveedor.</p>}
           <button
             type="button"
             onClick={() => {

@@ -37,7 +37,7 @@ export default function InvestorAccessPage() {
         <section className="bg-[#0C094E] text-white">
           <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1.1fr_440px] lg:items-center lg:gap-16">
             <div>
-              <p className="text-sm font-semibold tracking-wider uppercase text-[#B8BDF2]">Bello Valdez Enterprise</p>
+              <p className="text-sm font-semibold tracking-wider uppercase text-[#B8BDF2]">{isDemo ? 'Desarrollos Costa Serena' : 'Bello Valdez Enterprise'}</p>
               <h1 className="mt-3 font-display text-4xl leading-[1.1] sm:text-5xl">Su inversión, siempre a la vista.</h1>
               <p className="mt-4 max-w-md text-[#C7CBEA]">
                 Consulte su estado de cuenta, reporte pagos, descargue sus contratos y dé seguimiento a los avances de obra de cada inmueble.
@@ -45,13 +45,13 @@ export default function InvestorAccessPage() {
 
               <div className="mt-8 flex items-center gap-3 text-xs text-[#C7CBEA]">
                 <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
-              <span>{isDemo ? 'Acceso local de demostración mediante código OTP simulado; no se envían correos.' : 'Acceso confidencial protegido sin contraseñas mediante código OTP de verificación.'}</span>
+              <span>Acceso confidencial mediante código de verificación.</span>
               </div>
             </div>
 
             <div className="rounded-xl bg-white p-6 text-[#101826] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.5)] sm:p-8">
               <h2 className="font-display text-2xl">Acceda a su portal</h2>
-              <p className="mt-1 mb-6 text-sm text-[#5B6472]">{isDemo ? 'Use uno de estos perfiles ficticios para iniciar sesión localmente.' : 'Ingrese el correo registrado en su expediente de compra.'}</p>
+              <p className="mt-1 mb-6 text-sm text-[#5B6472]">Ingrese el correo registrado en su expediente de compra.</p>
               {isDemo && <ul className="mb-5 space-y-1 text-xs text-slate-600">{DEMO_CLIENTS.map((client) => <li key={client.code}><strong>{client.fullName}</strong> · {client.email}</li>)}</ul>}
               <AccessForm />
 
@@ -74,14 +74,14 @@ export default function InvestorAccessPage() {
             <div>
               <h3 className="font-display text-xl text-[#0C094E]">¿Es usted asesor o aliado comercial?</h3>
               <p className="mt-1 text-sm text-[#5B6472]">
-                Explore los perfiles de demostración del portal para conocer la experiencia y flujos de cobranza.
+                Consulte las cuentas disponibles y sus inversiones.
               </p>
             </div>
             <Link
               href="/inversionista/demo"
               className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-[#0C094E] px-5 text-sm font-semibold text-[#0C094E] transition hover:bg-[#0C094E] hover:text-white"
             >
-              Ver modo demostración
+              Abrir cuentas de inversionistas
             </Link>
           </div>
         </section>

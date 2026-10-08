@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { createLeadAction } from '@/app/portal/crm/actions';
+import { createWorkflowContact } from '@/lib/demo/browser-workflow';
 
 type LeadForm = {
   name: string;
@@ -151,6 +152,12 @@ export default function LeadWorkspace({
     }
 
     try {
+      if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+        const contact = createWorkflowContact(formData);
+        setStatus('saved');
+        router.push(`/portal/clientes/${contact.publicCode}`);
+        return;
+      }
       const result = await createLeadAction(formData);
 
       if (result.error) {
@@ -166,7 +173,7 @@ export default function LeadWorkspace({
       }
     } catch {
       setError(process.env.NEXT_PUBLIC_APP_SCOPE === 'demo'
-        ? 'No se pudo guardar el lead en este demo. Revisa el almacenamiento y vuelve a intentarlo.'
+        ? 'No se pudo guardar el lead. Revisa el almacenamiento y vuelve a intentarlo.'
         : 'No se pudo guardar el lead. Revisa tu conexión y vuelve a intentarlo.');
       setStatus('error');
     }
@@ -182,7 +189,7 @@ export default function LeadWorkspace({
         <div className="flex items-center gap-2"><span className="hidden text-[10px] font-bold text-slate-400 sm:block">{completion}<LocalizedText text={"/6 datos clave"} /></span><Link href="/portal/leads" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600"><LocalizedText text={"Cancelar"} /></Link><button type="submit" disabled={status === 'saving' || status === 'saved'} className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-lg shadow-blue-100 disabled:opacity-70">{status === 'saved' ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}{status === 'saving' ? 'Guardando…' : status === 'saved' ? 'Lead guardado' : <LocalizedText text={"Guardar lead"} />}</button></div>
       </header>
 
-      {possibleDuplicate && <div className="flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" /><div><p className="text-xs font-extrabold text-blue-900"><LocalizedText text={"Posible contacto existente"} /></p><p className="mt-1 text-[11px] leading-5 text-blue-700">{process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'El correo coincide con un contacto de ejemplo.' : <LocalizedText text={"El correo coincide con un registro previo. Se verificarán duplicados automáticamente en la base de datos."} />}</p></div></div>}
+      {possibleDuplicate && <div className="flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" /><div><p className="text-xs font-extrabold text-blue-900"><LocalizedText text={"Posible contacto existente"} /></p><p className="mt-1 text-[11px] leading-5 text-blue-700">{process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'El correo coincide con un contacto registrado.' : <LocalizedText text={"El correo coincide con un registro previo. Se verificarán duplicados automáticamente en la base de datos."} />}</p></div></div>}
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">{error}</div>}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -216,7 +223,7 @@ export default function LeadWorkspace({
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-sm font-extrabold text-blue-700">{initials}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-950">{form.name || 'Nuevo lead'}</p><p className="mt-1 truncate text-[10px] text-slate-500">{form.email || 'Sin correo todavía'}</p></div></div><div className="mt-5 space-y-3 border-t border-slate-100 pt-4"><UITranslationBoundary attributes={["label"]}><SummaryRow icon={BadgeCheck} label="Etapa" value={form.stage} /></UITranslationBoundary><UITranslationBoundary attributes={["label"]}><SummaryRow icon={Users} label="Responsable" value={form.owner} /></UITranslationBoundary><UITranslationBoundary attributes={["label"]}><SummaryRow icon={CircleDollarSign} label="Presupuesto" value={form.budgetMax ? `Hasta ${formatCurrency(Number(form.budgetMax), form.budgetCurrency)}` : 'Por definir'} /></UITranslationBoundary><UITranslationBoundary attributes={["label"]}><SummaryRow icon={Languages} label="Idioma" value={form.language} /></UITranslationBoundary><UITranslationBoundary attributes={["label"]}><SummaryRow icon={Clock3} label="Seguimiento" value={form.followUpDate || 'Sin programar'} /></UITranslationBoundary></div></div>
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5"><div className="flex items-center justify-between"><p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-blue-700"><LocalizedText text={"Calidad del registro"} /></p><span className="text-xs font-extrabold text-blue-800">{Math.round((completion / 6) * 100)}%</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${(completion / 6) * 100}%` }} /></div><ul className="mt-4 space-y-2 text-[10px] leading-4 text-slate-600"><li><LocalizedText text={"• Nombre, correo y teléfono permiten reportarlo."} /></li><li><LocalizedText text={"• Proyecto y presupuesto ayudan a calificarlo."} /></li><li><LocalizedText text={"• Un seguimiento programado evita perder la oportunidad."} /></li></ul></div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex gap-3"><ShieldCheck className="h-5 w-5 shrink-0 text-blue-600" /><div><p className="text-xs font-extrabold text-slate-900"><LocalizedText text={"Protección y exclusividad de 180 días"} /></p><p className="mt-2 text-[10px] leading-5 text-slate-500">{process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Registro de ejemplo guardado en el almacenamiento local de esta demo.' : <LocalizedText text={"Al confirmar, el lead quedará formalmente registrado con vigencia de 180 días en Supabase Postgres."} />}</p></div></div></div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex gap-3"><ShieldCheck className="h-5 w-5 shrink-0 text-blue-600" /><div><p className="text-xs font-extrabold text-slate-900"><LocalizedText text={"Protección y exclusividad de 180 días"} /></p><p className="mt-2 text-[10px] leading-5 text-slate-500">{process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'El registro conserva el expediente y su seguimiento comercial.' : <LocalizedText text={"Al confirmar, el lead quedará formalmente registrado con vigencia de 180 días en Supabase Postgres."} />}</p></div></div></div>
         </aside>
       </div>
     </form>

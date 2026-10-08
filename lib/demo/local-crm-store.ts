@@ -6,10 +6,8 @@
 
 import type { ContactSummary } from '@/lib/data/crm';
 import type { ProposalListItem } from '@/app/portal/proposals/actions';
-import { readDemoState, updateDemoState } from '@/lib/demo/local-store';
-import { DEMO_PORTAL_PROJECTS } from '@/lib/demo/projects';
-import { buildDossierTemplate } from '@/lib/portal/dossier-template';
-import { localizeDemoDossierAssets } from '@/lib/demo/localize-dossier-assets';
+import { updateDemoState } from '@/lib/demo/local-store';
+import { DEMO_PORTAL_PROJECTS, buildDemoDossier } from '@/lib/demo/projects';
 
 // Contactos iniciales de demostración
 export const INITIAL_DEMO_CONTACTS: ContactSummary[] = [
@@ -173,8 +171,9 @@ export function getDemoContacts(): ContactSummary[] {
 }
 
 export async function getDemoContactsPersistent(): Promise<ContactSummary[]> {
-  const persisted = await readDemoState();
-  return [...INITIAL_DEMO_CONTACTS, ...(persisted.contacts as ContactSummary[])];
+  // Interactive records are isolated in the browser workflow; never seed a
+  // recording with contacts left in a previous server filesystem session.
+  return INITIAL_DEMO_CONTACTS;
 }
 
 export function addDemoContact(contact: ContactSummary) {
@@ -191,7 +190,6 @@ export function getDemoProposals(): ProposalListItem[] {
 }
 
 export async function getDemoProposalsPersistent(): Promise<ProposalListItem[]> {
-  const persisted = await readDemoState();
   const seedDossiers: ProposalListItem[] = DEMO_PORTAL_PROJECTS.map((project, index) => {
     const sharedToken = `demo-dossier-${project.slug}`;
     return {
@@ -213,15 +211,13 @@ export async function getDemoProposalsPersistent(): Promise<ProposalListItem[]> 
         kind: 'dossier',
         project: project.name,
         project_slug: project.slug,
-        blocks: localizeDemoDossierAssets(buildDossierTemplate(project), project),
+        blocks: buildDemoDossier(project),
         branding: { name: 'OB Brokers Team', primary_color: '#0f172a', accent_color: '#2563eb' },
       },
       demoActivity: [],
     };
   });
-  const saved = persisted.proposals as ProposalListItem[];
-  const savedIds = new Set(saved.map((item) => item.id));
-  return [...seedDossiers.filter((item) => !savedIds.has(item.id)), ...saved];
+  return seedDossiers;
 }
 
 export function addDemoProposal(prop: ProposalListItem) {

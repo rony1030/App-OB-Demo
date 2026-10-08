@@ -68,3 +68,19 @@ git push origin main
 # 3. Despliegue directo a producción en Vercel
 npx vercel --prod --yes --token <TU_VERCEL_TOKEN>
 ```
+
+## 2026-10-08 · Recorrido comercial para grabaciones
+
+El alcance `demo` usa contactos y proyectos ficticios y conserva las operaciones interactivas en el navegador. La interfaz comercial no muestra etiquetas de demo o prueba.
+
+- Crear lead, consultar su expediente, registrar notas y actividades y adjuntar PDF o imágenes en IndexedDB.
+- Crear, guardar, aceptar y editar propuestas vinculadas al contacto; personalizar dossiers sin escribir al disco del servidor.
+- Crear negociación y reservar una unidad. Reportar el pago del cliente; pago y promesa se confirman automáticamente a los cuatro segundos.
+- Solicitar comisión, generar proforma y descargarla en PDF. A los diez segundos de su generación se aprueba y se habilita la factura final.
+- Generar factura con número fiscal y sello ficticios; diez segundos después se confirma el pago de comisión.
+- Los tiempos se calculan desde marcas de fecha persistidas: al recargar o volver al expediente, el flujo retoma la etapa correspondiente.
+- Las sesiones del inversionista usan cookies de cada navegador y sus reportes se conservan en el mismo flujo local; no se envían correos ni se ejecutan pagos reales.
+
+Validación: recorrido completo con Lucía Ventura / Villas Bahía Coral / BA-01; proforma y factura descargadas y renderizadas para revisión visual; expediente verificado después de recargar. Once suites de pruebas, incluida la secuencia y sus tiempos exactos.
+
+Alcance del almacenamiento: los contactos creados, archivos y enlaces personalizados se conservan en ese navegador y origen. Para grabar varias etapas, continuar desde el mismo navegador. No se sincronizan con otra computadora ni con el repositorio principal.

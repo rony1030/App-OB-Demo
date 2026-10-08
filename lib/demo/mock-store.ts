@@ -48,7 +48,7 @@ export const DEMO_PROJECT_VILLAS = {
   commission_rate: 5,
   inventory_total_declared: 19,
   inventory_available_declared: 14,
-  developer_name: 'Bello Valdez Enterprise',
+  developer_name: 'Desarrollos Costa Serena',
   brand_profile: {
     name: 'OB Brokers Team',
     primary_color: '#0f172a',

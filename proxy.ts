@@ -17,8 +17,11 @@ export async function proxy(request: NextRequest) {
       pathname === '/portal/clientes' || /^\/portal\/clientes\/[^/]+$/.test(pathname) ||
       pathname === '/portal/leads' || pathname === '/portal/leads/new' ||
       pathname === '/portal/projects' || pathname === '/portal/inventory' ||
+      /^\/portal\/projects\/[^/]+\/dossier$/.test(pathname) ||
       pathname === '/portal/proposals' || pathname === '/portal/proposals/new' ||
-      pathname === '/portal/developer';
+      /^\/portal\/proposals\/\d+\/edit$/.test(pathname) ||
+      pathname === '/portal/developer' || pathname === '/portal/comisiones' ||
+      /^\/portal\/comisiones\/[^/]+\/(proforma|factura)$/.test(pathname);
     const isDemoProposalApi = /^\/api\/public\/proposals\/[a-f0-9]{40}\/(decision|telemetry)$/i.test(pathname) ||
       /^\/api\/public\/proposals\/demo-[a-z0-9-]+\/telemetry$/i.test(pathname);
     const isAllowedDemo =

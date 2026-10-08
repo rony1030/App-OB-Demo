@@ -128,7 +128,7 @@ function LoginForm() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-          {isDemo ? 'Acceso de Demostración' : mode === 'magic' ? <LocalizedText text={"Acceso Directo al Portal"} /> : <LocalizedText text={"Iniciar sesión"} />}
+          {isDemo ? 'Iniciar sesión' : mode === 'magic' ? <LocalizedText text={"Acceso Directo al Portal"} /> : <LocalizedText text={"Iniciar sesión"} />}
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           {mode === 'magic'
@@ -332,21 +332,21 @@ function LoginForm() {
       {isDemo && (
         <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-400 text-center">
-            Accesos Rápidos de Demostración
+            Portales de acceso
           </p>
           <div className="grid grid-cols-2 gap-3">
             <Link
               href="/inversionista/demo"
               className="flex flex-col items-center justify-center p-3 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 text-blue-900 transition text-center group"
             >
-              <span className="text-xs font-extrabold group-hover:underline">Demo Inversionista</span>
+              <span className="text-xs font-extrabold group-hover:underline">Portal de Inversionista</span>
               <span className="text-[10px] text-blue-600 font-medium mt-0.5">Cartera y pagos</span>
             </Link>
             <Link
               href="/portal/developer"
               className="flex flex-col items-center justify-center p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 text-indigo-900 transition text-center group"
             >
-              <span className="text-xs font-extrabold group-hover:underline">Demo Developer</span>
+              <span className="text-xs font-extrabold group-hover:underline">Portal de Desarrolladora</span>
               <span className="text-[10px] text-indigo-700 font-medium mt-0.5">Inventario y actividad</span>
             </Link>
           </div>

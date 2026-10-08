@@ -96,6 +96,6 @@ export default async function NewProposalPage(props: { searchParams: Promise<{ p
     getActiveMarketingOffersForProject(project.id),
   ]);
   const contactId = Number(searchParams.contactId);
-  const initialRecipientId = contacts.some((contact) => contact.id === contactId) ? contactId : undefined;
+  const initialRecipientId = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' && Number.isFinite(contactId) && contactId > 0 ? contactId : contacts.some((contact) => contact.id === contactId) ? contactId : undefined;
   return <SimpleProposalCreator project={project} selectedUnitIds={selectedUnits} selectedLotTypologies={selections} recipients={contacts.map((contact) => ({ id: contact.id, fullName: contact.fullName, email: contact.email, phone: contact.phone, classification: contact.classification }))} initialRecipientId={initialRecipientId} activeOffers={activeOffers} canApplyManualDiscount={['super_admin', 'master_broker_admin'].includes(currentUser.role)} canUseDirectInvestor={['super_admin', 'master_broker_admin', 'agency_support'].includes(currentUser.role)} brokerName={currentUser.displayName} brokerPhone={currentUser.phone} brokerEmail={currentUser.email} brokerAvatarUrl={currentUser.avatarUrl} brokerProfessionalTitle={currentUser.professionalTitle} />;
 }

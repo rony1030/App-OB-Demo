@@ -5,6 +5,8 @@ import { UITranslationBoundary, LocalizedText } from '@/components/i18n/UITransl
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useWorkflow } from '@/lib/demo/use-workflow';
+import { changeWorkflow, mergeWorkflowContacts } from '@/lib/demo/browser-workflow';
 import Image from '@/components/ui/OptimizedImage';
 import { notify, requestConfirmation } from '@/components/feedback/AppNotifications';
 import {
@@ -167,8 +169,8 @@ type ModuleKey = keyof typeof moduleCopy;
 export default function PortalModulePage({
   module,
   projects,
-  contacts = [],
-  proposals = [],
+  contacts: seedContacts = [],
+  proposals: seedProposals = [],
   canCreateProposals = false,
   canEditDossiers = false,
   canEditProposals = false,
@@ -181,6 +183,9 @@ export default function PortalModulePage({
   canEditDossiers?: boolean;
   canEditProposals?: boolean;
 }) {
+  const workflow = useWorkflow();
+  const contacts = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? mergeWorkflowContacts(seedContacts, workflow.state) : seedContacts;
+  const proposals = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? [...workflow.state.proposals, ...seedProposals.filter(item => !workflow.state.proposals.some(saved => saved.id === item.id))] : seedProposals;
   const { locale } = useLocale();
   const copyRaw = moduleCopy[module];
   const copy = {
@@ -296,6 +301,7 @@ function PipelineBoard({ contacts }: { contacts: ContactSummary[] }) {
     contacted: { es: 'Contactados', en: 'Contacted', fr: 'Contactés' },
     proposal: { es: 'Propuesta enviada', en: 'Proposal sent', fr: 'Proposition envoyée' },
     negotiation: { es: 'Negociación', en: 'Negotiation', fr: 'Négociation' },
+    reservation: { es: 'Reserva', en: 'Reservation', fr: 'Réservation' },
     won: { es: 'Cierre ganado', en: 'Closed won', fr: 'Gagné' },
   };
   const columns = [
@@ -304,6 +310,7 @@ function PipelineBoard({ contacts }: { contacts: ContactSummary[] }) {
     { key: 'contacted', label: columnLabels.contacted[locale] || columnLabels.contacted.es },
     { key: 'proposal', label: columnLabels.proposal[locale] || columnLabels.proposal.es },
     { key: 'negotiation', label: columnLabels.negotiation[locale] || columnLabels.negotiation.es },
+    { key: 'reservation', label: columnLabels.reservation[locale] || columnLabels.reservation.es },
     { key: 'won', label: columnLabels.won[locale] || columnLabels.won.es },
   ];
 
@@ -474,6 +481,14 @@ function ProposalsTable({
   ] as const;
 
   const handleCloneDossier = async (item: ProposalListItem) => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      const token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().slice(0, 8);
+      // This function runs only from a click handler, never during render.
+      // eslint-disable-next-line react-hooks/purity
+      const clone = { ...item, id: Date.now(), sharedToken: token, sharedUrl: `/p/${token}`, title: `${item.projectName} · Dossier personalizado`, createdAt: new Date().toISOString(), viewsCount: 0 };
+      changeWorkflow(state => { state.proposals.unshift(clone); });
+      router.push(clone.sharedUrl); return;
+    }
     try {
       setCloningId(item.id);
       const res = await cloneProjectDossierAction({
@@ -508,6 +523,7 @@ function ProposalsTable({
       ? `Resend proposal by email to ${item.clientEmail}?`
       : `¿Reenviar la propuesta por correo a ${item.clientEmail}?`;
     if (!(await requestConfirmation(confirmPrompt))) return;
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') { notify('Propuesta enviada al cliente.', 'success'); return; }
     setResendingId(item.id);
     const result = await resendProposalEmailAction(item.id);
     setResendingId(null);
@@ -535,6 +551,10 @@ function ProposalsTable({
       ? `Archive “${item.title}”? Link will no longer appear in CRM, but history is preserved.`
       : `¿Archivar “${item.title}”? El enlace deja de aparecer en el CRM, pero el historial queda preservado.`;
     if (!(await requestConfirmation(confirmArchivePrompt))) return;
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      changeWorkflow(state => { state.proposals = [{ ...item, status: 'archived' }, ...state.proposals.filter(value => value.id !== item.id)]; });
+      setArchivedIds(current => [...current, item.id]); return;
+    }
     startArchiving(async () => {
       const result = await archivePresentationAction(item.id);
       if (result.success) setArchivedIds((current) => [...current, item.id]);
@@ -548,6 +568,10 @@ function ProposalsTable({
       ? `Permanently delete “${item.title}”? Its link will stop working. This cannot be undone.`
       : `¿Eliminar definitivamente ${item.kind === 'dossier' ? 'el dossier' : 'la propuesta'} “${item.title}”? Su enlace dejará de funcionar. Esta acción no se puede deshacer.`;
     if (!(await requestConfirmation(prompt))) return;
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      changeWorkflow(state => { state.proposals = [{ ...item, status: 'archived' }, ...state.proposals.filter(value => value.id !== item.id)]; });
+      setArchivedIds(current => [...current, item.id]); return;
+    }
     startArchiving(async () => {
       const result = await deletePresentationAction(item.id);
       if (result.success) setArchivedIds((current) => [...current, item.id]);
@@ -555,6 +579,9 @@ function ProposalsTable({
     });
   };
   const openTracking = async (item: ProposalListItem) => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+      setTracking({ presentationId: item.id, title: item.title, kind: item.kind, clientName: item.clientName || 'Sin asignar', projectName: item.projectName || '', views: item.viewsCount || 0, pdfs: 0, shares: 0, whatsappClicks: 0, averageDurationSeconds: 0, devices: [], locations: [], activity: item.demoActivity || [] }); return;
+    }
     setTrackingLoading(true);
     const result = await getProposalTrackingAction(item.id);
     setTrackingLoading(false);
@@ -566,7 +593,7 @@ function ProposalsTable({
 
   const proposals = useMemo(() => {
     return initialProposals.filter((item) => {
-      if (archivedIds.includes(item.id)) return false;
+      if (archivedIds.includes(item.id) || item.status === 'archived') return false;
       if (kindFilter !== 'all' && item.kind !== kindFilter) return false;
       if (!normalizedQuery) return true;
 
@@ -802,7 +829,7 @@ function ProposalsTable({
                 ? 'Cliente interesado'
                 : item.status === 'rejected'
                 ? 'No continúa'
-                : item.sharedExpiresAt
+                : (item.sharedExpiresAt || (item.status === 'ready' && item.sharedToken))
                 ? 'Enlace activo'
                 : 'Borrador';
 
@@ -1146,7 +1173,7 @@ function ProposalsTable({
                   <td className="px-5 py-4">
                     <p className="font-extrabold text-slate-800">{item.viewsCount || 0} {item.viewsCount === 1 ? 'apertura' : 'aperturas'}</p>
                     <p className={cn('mt-1 text-[9px] font-black uppercase', item.isMasterTemplate && item.canClone ? 'text-blue-700' : item.status === 'accepted' ? 'text-emerald-700' : item.status === 'rejected' ? 'text-rose-700' : 'text-slate-400')}>
-                      {item.isMasterTemplate ? (item.canClone ? 'Plantilla pública' : 'Plantilla privada') : item.status === 'accepted' ? 'Cliente interesado' : item.status === 'rejected' ? <LocalizedText text={"No continúa"} /> : item.sharedExpiresAt ? 'Enlace activo' : 'Borrador'}
+                      {item.isMasterTemplate ? (item.canClone ? 'Plantilla pública' : 'Plantilla privada') : item.status === 'accepted' ? 'Cliente interesado' : item.status === 'rejected' ? <LocalizedText text={"No continúa"} /> : (item.sharedExpiresAt || (item.status === 'ready' && item.sharedToken)) ? 'Enlace activo' : 'Borrador'}
                     </p>
                   </td>
                   <td className="px-5 py-4 text-slate-400 text-[11px]">

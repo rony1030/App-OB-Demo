@@ -19,6 +19,8 @@ import type { Block } from '@/components/portal/PresentationEditor';
 import type { Json } from '@/types/database';
 import { cn, formatCurrency } from '@/lib/utils';
 import type { MarketingOffer } from '@/lib/data/marketing-offers';
+import { useWorkflow } from '@/lib/demo/use-workflow';
+import { changeWorkflow } from '@/lib/demo/browser-workflow';
 
 export type SimpleProposalRecipient = {
   id: number;
@@ -116,7 +118,7 @@ export default function SimpleProposalCreator({
   project,
   selectedUnitIds,
   selectedLotTypologies = [],
-  recipients,
+  recipients: seedRecipients,
   initialRecipientId,
   activeOffers = [],
   canApplyManualDiscount = false,
@@ -269,6 +271,10 @@ export default function SimpleProposalCreator({
       if (logoFileInputRef.current) logoFileInputRef.current.value = '';
     }
   }
+  const workflow = useWorkflow();
+  const recipients: SimpleProposalRecipient[] = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo'
+    ? [...workflow.state.contacts.map(item => ({ id: item.id, fullName: item.fullName, email: item.email, phone: item.phone, classification: item.classification })), ...seedRecipients.filter(item => !workflow.state.contacts.some(contact => contact.id === item.id))]
+    : seedRecipients;
   const proposalItems = useMemo(
     () => buildProposalItems(project, selectedUnitIds, selectedLotTypologies),
     [project, selectedLotTypologies, selectedUnitIds],
@@ -306,6 +312,13 @@ export default function SimpleProposalCreator({
     return recipients.find((item) => item.id === initialRecipientId) || null;
   });
   const [recipientQuery, setRecipientQuery] = useState('');
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo' || !initialRecipientId || !workflow.ready) return;
+    const selected = recipients.find(item => item.id === initialRecipientId);
+    if (selected) setRecipient(selected);
+    // The saved client becomes available after browser storage hydrates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflow.ready, initialRecipientId]);
   const isDemoScope = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo';
   const [recipientExpanded, setRecipientExpanded] = useState(() => !editMode && !initialRecipientId);
   const [directInvestorMode, setDirectInvestorMode] = useState(() => Boolean(editMode?.snapshot?.direct_investor));
@@ -749,6 +762,16 @@ export default function SimpleProposalCreator({
     };
 
     try {
+      if (isDemoScope) {
+        const id = editMode?.presentationId || Date.now();
+        const token = editMode ? workflow.state.proposals.find(item => item.id === id)?.sharedToken || crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().slice(0, 8) : crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().slice(0, 8);
+        const url = `/p/${token}`;
+        const now = new Date().toISOString();
+        changeWorkflow(state => { state.proposals = [{ id, kind: 'proposal', title, status: 'ready', createdAt: now, updatedAt: now, clientName: recipientName, clientEmail: recipient?.email || undefined, clientPhone: recipient?.phone || undefined, projectName: project.name, projectSlug: project.slug, currency: project.currency || 'USD', snapshot: snapshot as unknown as Json, sharedToken: token, sharedUrl: url, viewsCount: 0 }, ...state.proposals.filter(item => item.id !== id)]; });
+        setShareResult({ url: window.location.origin + url, token });
+        setShowSaveToast(true);
+        return;
+      }
       if (editMode) {
         const result = await updateProposalAction({
           presentationId: editMode.presentationId,

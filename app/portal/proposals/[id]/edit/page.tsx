@@ -1,5 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import SimpleProposalCreator from '@/components/portal/proposals/SimpleProposalCreator';
+import DemoProposalEditor from '@/components/portal/proposals/DemoProposalEditor';
+import { getDemoProposalsPersistent } from '@/lib/demo/local-crm-store';
 import PresentationEditor from '@/components/portal/PresentationEditor';
 import { getPortalProjects } from '@/lib/data/projects';
 import { getCurrentUser } from '@/lib/auth/get-user';
@@ -15,6 +17,8 @@ export default async function EditProposalPage(props: { params: Promise<{ id: st
 
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect(`/login?next=/portal/proposals/${presentationId}/edit`);
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') return <DemoProposalEditor id={presentationId} projects={await getPortalProjects()} seed={await getDemoProposalsPersistent()} />;
 
   const { data: proposalData, error, viewUrl } = await getProposalForEditAction(presentationId);
   if (viewUrl) redirect(viewUrl);

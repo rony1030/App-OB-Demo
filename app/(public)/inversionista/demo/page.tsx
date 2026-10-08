@@ -6,8 +6,8 @@ import { hasDemoAccess } from '@/lib/investor/auth';
 import DemoUnlockForm from '@/components/portal/investor/DemoUnlockForm';
 
 export const metadata: Metadata = {
-  title: 'Demostración del Portal de Inversionistas | OB Brokers',
-  description: 'Casos prácticos de demostración con fotografías reales de proyectos y cartera simulada.',
+  title: 'Portal de Inversionistas | OB Brokers',
+  description: 'Estado de cuenta, documentos y seguimiento de inversiones.',
   robots: { index: false, follow: false },
 };
 
@@ -18,8 +18,8 @@ const DEMOS = [
     short: 'Carlos',
     scenario: 'Una unidad · al día',
     detail: 'El caso más simple: un solo inmueble con todos sus pagos al corriente.',
-    images: ['/projects/cana-rock/drone-golf-course.jpg'],
-    units: [{ project: 'Cana Rock', flow: 'Portal del desarrollador' }],
+    images: ['/demo-projects/villas-punta-cana.png'],
+    units: [{ project: 'Villas en Punta Cana', flow: 'Reporte de pago' }],
   },
   {
     code: 'CLI-MIXTO-002',
@@ -28,14 +28,14 @@ const DEMOS = [
     scenario: 'Tres unidades · al día, con mora y en legal',
     detail: 'Cartera mixta en tres proyectos, con cuotas vencidas y un expediente jurídico.',
     images: [
-      '/projects/cipres-residences/gallery/cipres_06.jpeg',
-      '/projects/uve-residences/hero.jpeg',
-      '/projects/palm-view/gallery/amenidades-casa-club-aerea.jpg',
+      '/demo-projects/apartamentos-brisa-caribe.png',
+      '/demo-projects/villas-bahia-coral.png',
+      '/demo-projects/casas-campo-verde.png',
     ],
     units: [
-      { project: 'Ciprés Residences', flow: 'Instrucciones' },
-      { project: 'UVE Residences', flow: 'API' },
-      { project: 'Palm View', flow: 'Correo' },
+      { project: 'Apartamentos Brisa Caribe', flow: 'Reporte de pago' },
+      { project: 'Villas Bahía Coral', flow: 'Reporte de pago' },
+      { project: 'Casas Campo Verde', flow: 'Reporte de pago' },
     ],
   },
   {
@@ -45,14 +45,14 @@ const DEMOS = [
     scenario: 'Tres unidades · entregada, en obra y en entrega',
     detail: 'Incluye el protocolo de entrega con Pago Insoluto, cuotas vencidas y mora.',
     images: [
-      '/projects/cana-rock/drone-golf-course.jpg',
-      '/projects/palm-view/gallery/amenidades-piscina-torre-1.jpg',
-      '/projects/uve-residences/exterior-cover.jpg',
+      '/demo-projects/villas-punta-cana.png',
+      '/demo-projects/casas-campo-verde.png',
+      '/demo-projects/villas-bahia-coral.png',
     ],
     units: [
-      { project: 'Cana Rock', flow: 'Portal del desarrollador' },
-      { project: 'Palm View', flow: 'Correo' },
-      { project: 'UVE Residences', flow: 'API' },
+      { project: 'Villas en Punta Cana', flow: 'Reporte de pago' },
+      { project: 'Casas Campo Verde', flow: 'Reporte de pago' },
+      { project: 'Villas Bahía Coral', flow: 'Reporte de pago' },
     ],
   },
 ];
@@ -87,10 +87,9 @@ export default async function InvestorDemoPage() {
         ) : (
           <div>
             <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-wider text-[#24207A]">Ambiente Controlado</p>
-              <h1 className="mt-1 font-display text-3xl sm:text-4xl text-[#0C094E]">Tres clientes de ejemplo</h1>
+              <h1 className="mt-1 font-display text-3xl sm:text-4xl text-[#0C094E]">Portal de Inversionistas</h1>
               <p className="mt-2 text-[#5B6472]">
-                Datos ficticios con fotografías reales de los proyectos. Cada cliente muestra un caso distinto y un flujo diferente para reportar pagos.
+                Consulta tus inversiones, documentos y estados de cuenta.
               </p>
             </div>
 

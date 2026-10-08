@@ -55,9 +55,10 @@ const brokerNavigation: NavigationItem[] = [
 const demoNavigation: NavigationItem[] = [
   { label: 'home', href: '/portal', icon: Grid2X2 },
   { label: 'clients', href: '/portal/clientes', icon: Users },
-  { label: 'negotiations', href: '/portal/leads/new', icon: BarChart3 },
+  { label: 'negotiations', href: '/portal/leads', icon: BarChart3 },
   { label: 'projects', href: '/portal/developer', icon: Building2 },
   { label: 'proposals', href: '/portal/proposals', icon: FileText },
+  { label: 'commissions', href: '/portal/comisiones', icon: CircleDollarSign },
 ];
 
 const adminNavigation: NavigationItem[] = [

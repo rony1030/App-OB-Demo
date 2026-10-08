@@ -6,9 +6,9 @@ export default async function PortalPage() {
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
     if (!(await cookies()).get('demo_auth_session')) redirect('/login?next=/portal');
     const { getCrmDashboardSummary } = await import('@/lib/data/crm');
-    const { DEMO_PORTAL_PROJECT_VILLAS } = await import('@/lib/data/demo-villas-project');
+    const { DEMO_PORTAL_PROJECTS } = await import('@/lib/demo/projects');
     const [crm] = await Promise.all([getCrmDashboardSummary()]);
-    const projects = [DEMO_PORTAL_PROJECT_VILLAS];
+    const projects = DEMO_PORTAL_PROJECTS;
     return <PortalDashboard projects={projects} displayName="Soporte OB Brokers" crm={crm} todayActivities={[]} myAgreement={null} canCreateProposals />;
   }
   const [{ getPortalProjects }, { getMyPendingActivities, getCrmDashboardSummary }, { getMyAgreements }, { getCurrentUser }, { hasCapability }] = await Promise.all([

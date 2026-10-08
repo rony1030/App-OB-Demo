@@ -1,7 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { cookies, headers } from 'next/headers';
 import { mailer, SMTP_CONFIG } from '@/lib/email/mailer';
-import { updateDemoState } from '@/lib/demo/local-store';
 import { DEMO_CLIENTS } from '@/lib/data/investor-demo';
 
 export const INVESTOR_SESSION_COOKIE = 'ob_inv_session';
@@ -84,13 +83,10 @@ export async function requestInvestorOtp(rawEmail: string): Promise<{ ok: boolea
 
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
     const client = DEMO_CLIENTS.find((entry) => entry.email.toLowerCase() === email);
-    if (!client) return { ok: false, error: 'No encontramos un perfil demo con ese correo. Pruebe Carlos, Elena o Roberto desde “Ver modo demostración”.' };
-    const code = 'DEMO26';
-    await updateDemoState((state) => {
-      state.investorOtps[email] = { code, expiresAt: Date.now() + OTP_TTL_MS };
-      state.investors[client.code] ??= { email, session: false, paymentReports: [] };
-    });
-    return { ok: true, message: 'Código de demostración: DEMO26 (no se envió ningún correo).' };
+    if (!client) return { ok: false, error: 'No encontramos una cuenta con ese correo. Selecciona una cuenta de inversionista.' };
+    const cookieStore = await cookies();
+    cookieStore.set('ob_inv_challenge', `${hashValue(email)}:${Date.now() + OTP_TTL_MS}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: OTP_TTL_MS / 1000 });
+    return { ok: true, message: 'Código de acceso: 610204' };
   }
 
   // Comprobar que no sea un correo ficticio de demo
@@ -234,18 +230,12 @@ export async function verifyInvestorOtp(
 
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
     const match = DEMO_CLIENTS.find((entry) => entry.email.toLowerCase() === email);
-    if (!match) return { ok: false, error: 'El correo no corresponde a un perfil demo.' };
+    if (!match) return { ok: false, error: 'El correo no corresponde a una cuenta registrada.' };
     const cookieStore = await cookies();
-    const valid = await updateDemoState((state) => {
-      const challenge = state.investorOtps[email];
-      if (!challenge || challenge.expiresAt < Date.now() || challenge.code !== cleanCode) return false;
-      delete state.investorOtps[email];
-      state.investors[match.code] = { email, session: true, paymentReports: state.investors[match.code]?.paymentReports ?? [] };
-      return true;
-    });
-    if (!valid) return { ok: false, error: 'Código demo incorrecto o expirado. Solicite otro.' };
+    const challenge = cookieStore.get('ob_inv_challenge')?.value.split(':');
+    if (!challenge || challenge[0] !== hashValue(email) || Number(challenge[1]) < Date.now() || cleanCode !== '610204') return { ok: false, error: 'Código incorrecto o expirado. Solicite otro.' };
+    cookieStore.delete('ob_inv_challenge');
     cookieStore.set(INVESTOR_SESSION_COOKIE, `demo:${match.code}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 30 * 24 * 60 * 60 });
-    await updateDemoState((state) => { state.investorSession = { code: match.code, email }; });
     return { ok: true, publicCode: match.code };
   }
 
@@ -365,19 +355,11 @@ export async function getAuthenticatedInvestorSession(): Promise<InvestorAuthSes
   const cookieStore = await cookies();
   const token = cookieStore.get(INVESTOR_SESSION_COOKIE)?.value;
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
-    const { readDemoState } = await import('@/lib/demo/local-store');
-    const active = (await readDemoState()).investorSession;
-    if (!active) return null;
-    const demoClient = DEMO_CLIENTS.find((entry) => entry.code === active.code);
-    return demoClient ? { sessionId: `demo-${demoClient.id}`, contactId: demoClient.id, email: active.email, publicCode: demoClient.code, fullName: demoClient.fullName } : null;
+    const client = token?.startsWith('demo:') ? DEMO_CLIENTS.find(entry => entry.code === token.slice(5)) : null;
+    return client ? { sessionId: `demo-${client.id}`, contactId: client.id, email: client.email, publicCode: client.code, fullName: client.fullName } : null;
   }
   if (!token) return null;
 
-  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' && token.startsWith('demo:')) {
-    const client = DEMO_CLIENTS.find((entry) => entry.code === token.slice(5));
-    if (!client) return null;
-    return { sessionId: `demo-${client.id}`, contactId: client.id, email: client.email, publicCode: client.code, fullName: client.fullName };
-  }
   if (token.length < 32) return null;
 
   const tokenHash = hashValue(token);
@@ -436,7 +418,7 @@ export async function getAuthenticatedInvestorSession(): Promise<InvestorAuthSes
 export async function logoutInvestor(): Promise<void> {
   const cookieStore = await cookies();
   if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
-    await updateDemoState((state) => { state.investorSession = null; });
+    cookieStore.delete('ob_inv_challenge');
     cookieStore.delete(INVESTOR_SESSION_COOKIE);
     return;
   }

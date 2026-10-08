@@ -70,7 +70,7 @@ export default async function PortalLayout({ children }: { children: React.React
     const { DEFAULT_BRAND } = await import('@/types/branding');
     const { default: DemoPortalShell } = await import('@/components/portal/PortalShell');
     return (
-      <BrandProvider initialTheme={{ ...DEFAULT_BRAND, name: 'OB Brokers Demo', logo_url: '/brand/ob-brokers-horizontal-azul-recortado.png' }}>
+      <BrandProvider initialTheme={{ ...DEFAULT_BRAND, name: 'Horizonte Asesores Inmobiliarios', logo_url: '/brand/ob-brokers-horizontal-azul-recortado.png' }}>
         <DemoPortalShell currentUser={{
           ...DEMO_USER, phone: null, avatarUrl: null, professionalTitle: 'Master Broker Director',
           instagramUrl: null, facebookUrl: null, linkedinUrl: null, tiktokUrl: null, websiteUrl: null,

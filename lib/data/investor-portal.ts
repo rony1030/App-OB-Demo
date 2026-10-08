@@ -4,6 +4,7 @@ import type { ProjectConstructionUpdate } from '@/lib/data/construction-updates'
 import { buildDemoUnit, findDemoClient } from '@/lib/data/investor-demo';
 import { getDemoConstructionUpdates } from '@/lib/data/investor-demo-construction';
 import { readDemoState } from '@/lib/demo/local-store';
+import { DEMO_PORTAL_PROJECTS } from '@/lib/demo/projects';
 import { getPaymentFlow, toPublicFlow } from '@/lib/data/payment-flows';
 import type { PaymentFlowPublic } from '@/lib/investor/payment-report';
 import {
@@ -182,6 +183,17 @@ async function buildDemoPortal(code: string): Promise<InvestorPortalData | null>
     };
   });
   const reservations = await attachFlows(bases, true);
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    for (const reservation of reservations) {
+      const index = reservation.projectSlug === 'cipres-residences' ? 2 : reservation.projectSlug === 'uve-residences' ? 1 : reservation.projectSlug === 'palm-view' ? 3 : 0;
+      const project = DEMO_PORTAL_PROJECTS[index];
+      reservation.projectName = project.name;
+      reservation.projectSlug = project.slug;
+      reservation.coverImage = project.image;
+      reservation.unitCode = `${index === 2 ? 'BC' : index === 3 ? 'CV' : 'VC'}-${String(reservation.reservationId % 100).padStart(2, '0')}`;
+      reservation.paymentFlow = { mode: 'api', developerName: project.developer, steps: ['Registra el monto y la fecha del pago.', 'Adjunta el comprobante para su verificación.', 'Recibirás la confirmación en tu estado de cuenta.'], acceptsReceipt: true };
+    }
+  }
   const localState = process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? await readDemoState() : null;
   const reports = localState?.investors[client.code]?.paymentReports ?? [];
   for (const report of reports) {
@@ -208,8 +220,8 @@ async function buildDemoPortal(code: string): Promise<InvestorPortalData | null>
       publicCode: client.code,
       createdAt: new Date(asOf.getFullYear() - 1, 0, 15).toISOString(),
     },
-    organization: ORGANIZATION,
-    advisor: ADVISOR,
+    organization: process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? { name: 'Desarrollos Costa Serena', slug: 'costa-serena' } : ORGANIZATION,
+    advisor: process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? { name: 'Andrea Castillo', title: 'Asesora inmobiliaria', photoUrl: '/brand/ob-brokers-isotipo-azul.png', whatsapp: '18095550100', email: 'andrea@horizonte.example', legalWhatsapp: '18095550100' } : ADVISOR,
     reservations,
     documents: client.documents.map((d) => ({
       id: d.id,
@@ -218,7 +230,7 @@ async function buildDemoPortal(code: string): Promise<InvestorPortalData | null>
       title: d.title,
       fileName: d.fileName,
       createdAt: new Date(asOf.getFullYear(), asOf.getMonth() - d.monthsAgo, 15).toISOString(),
-      unitCode: d.unitCode,
+      unitCode: process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? reservations[0]?.unitCode || '' : d.unitCode,
       url: null,
     })),
     constructionByProject: await constructionFor(reservations.map((r) => r.projectSlug), process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo'),

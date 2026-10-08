@@ -14,6 +14,7 @@ import type { CrmDashboardSummary, DashboardStage, TodayActivity } from '@/lib/d
 import type { AgreementSummary } from '@/lib/data/agreements';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useLocale } from '@/components/i18n/LocaleProvider';
+import { useWorkflow } from '@/lib/demo/use-workflow';
 
 const stageOrder: DashboardStage[] = ['Nuevo', 'Contactado', 'Propuesta', 'Negociación', 'Reserva'];
 
@@ -224,7 +225,7 @@ function greetingForHour(hour: number, locale: 'es' | 'en' | 'fr' = 'es') {
 export default function PortalDashboard({
   projects,
   displayName,
-  crm,
+  crm: seedCrm,
   todayActivities,
   myAgreement,
   canCreateProposals = false,
@@ -236,6 +237,25 @@ export default function PortalDashboard({
   myAgreement: AgreementSummary | null;
   canCreateProposals?: boolean;
 }) {
+  const workflow = useWorkflow();
+  const crm = useMemo(() => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo') return seedCrm;
+    const result = structuredClone(seedCrm);
+    for (const contact of workflow.state.contacts) {
+      const deal = workflow.state.deals.find(item => item.contactId === contact.id);
+      const proposal = workflow.state.proposals.find(item => (item.snapshot as Record<string, unknown> | undefined)?.contact_id === contact.id);
+      const stage: DashboardStage = deal ? 'Reserva' : proposal ? 'Propuesta' : 'Nuevo';
+      const existing = result.recentLeads.find(item => item.id === contact.id);
+      if (existing) { result.stageCounts[existing.stage]--; result.stageValues[existing.stage] -= existing.value; }
+      const value = deal?.price || contact.primaryOpportunity?.budgetMax || 0;
+      result.recentLeads = [{ id: contact.id, publicCode: contact.publicCode, name: contact.fullName, email: contact.email || '', project: deal?.projectName || proposal?.projectName || contact.primaryOpportunity?.projectName || 'Por definir', value, stage, initials: contact.fullName.split(' ').map(part => part[0]).join('').slice(0, 2), updatedAt: contact.updatedAt }, ...result.recentLeads.filter(item => item.id !== contact.id)];
+      if (!existing) result.activeClientsCount++;
+      result.stageCounts[stage]++; result.stageValues[stage] += value;
+      if (deal?.paidAt) { result.wonThisMonthCount++; result.totalClosedThisMonthCount++; }
+    }
+    result.pipelineTotalValue = Object.values(result.stageValues).reduce((sum, value) => sum + value, 0);
+    return result;
+  }, [seedCrm, workflow.state]);
   const { locale } = useLocale();
   const t = dashboardI18n[locale] || dashboardI18n.es;
 

@@ -7,6 +7,9 @@ import { verifyOrgAccess } from '@/lib/auth/verify-org-access';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, UserX } from 'lucide-react';
+import DemoContactWorkflow from '@/components/portal/crm/DemoContactWorkflow';
+import { getContacts } from '@/lib/data/crm';
+import { getPortalProjects } from '@/lib/data/projects';
 
 export default async function ContactDetailPage(props: { params: Promise<{ code: string }> }) {
   const params = await props.params;
@@ -14,6 +17,11 @@ export default async function ContactDetailPage(props: { params: Promise<{ code:
 
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect('/login');
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const [seed, projects] = await Promise.all([getContacts(), getPortalProjects()]);
+    return <DemoContactWorkflow code={code} seed={seed} projects={projects} />;
+  }
 
   const contact = await getContactByCode(code);
 

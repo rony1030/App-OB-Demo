@@ -71,7 +71,7 @@ export default function AccessForm() {
       try {
         const result = await requestOtpAction(email);
         if (result.ok) {
-          setInfo('Nuevo código enviado. Revise su bandeja de entrada o spam.');
+          setInfo(result.message || 'Nuevo código enviado. Revise su bandeja de entrada o spam.');
         } else {
           setError(result.error ?? 'No pudimos enviar un nuevo código.');
         }
