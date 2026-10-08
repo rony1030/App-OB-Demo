@@ -189,14 +189,18 @@ export default async function PublicProposalPage(props: {
     const saved = (await getDemoProposalsPersistent()).find((item) => item.sharedToken === token && item.status !== 'archived');
     const snapshot = saved?.snapshot as Record<string, unknown> | undefined;
     if (saved?.kind === 'dossier' && saved.status === 'ready' && Array.isArray(snapshot?.blocks)) {
-      await updateDemoProposalByToken(token, (item) => ({
-        ...item,
-        viewsCount: (item.viewsCount || 0) + 1,
-        demoActivity: [
-          ...(item.demoActivity || []),
-          { type: 'dossier_view', label: 'Dossier abierto', occurredAt: new Date().toISOString(), device: 'mobile', location: 'Santo Domingo, República Dominicana', durationSeconds: 96 },
-        ],
-      }));
+      // A serverless demo host has a read-only filesystem. Opening a seeded
+      // dossier must never depend on writing analytics to local disk.
+      if (!process.env.VERCEL) {
+        await updateDemoProposalByToken(token, (item) => ({
+          ...item,
+          viewsCount: (item.viewsCount || 0) + 1,
+          demoActivity: [
+            ...(item.demoActivity || []),
+            { type: 'dossier_view', label: 'Dossier abierto', occurredAt: new Date().toISOString(), device: 'mobile', location: 'Santo Domingo, República Dominicana', durationSeconds: 96 },
+          ],
+        })).catch(() => false);
+      }
       return (
         <PublicDossierViewer
           blocks={snapshot.blocks as SlideBlock[]}

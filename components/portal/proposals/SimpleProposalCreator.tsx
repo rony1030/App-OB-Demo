@@ -1505,7 +1505,7 @@ export default function SimpleProposalCreator({
           {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold leading-5 text-red-800">{error}</div>}
         </aside>
 
-        <UITranslationBoundary attributes={["aria-label"]}><section aria-label="Vista previa de la propuesta" className="min-w-0 rounded-2xl border border-[#dfd9cd] bg-[#e9e6df] p-3 shadow-sm sm:p-5 lg:p-7">
+        <UITranslationBoundary attributes={["aria-label"]}><section aria-label="Vista previa de la propuesta" className="min-w-0 rounded-2xl border border-[#dfd9cd] bg-[#e9e6df] p-3 shadow-sm sm:p-5 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:p-7">
           <div className="mb-3.5 space-y-2 sm:mb-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">

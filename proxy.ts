@@ -19,7 +19,8 @@ export async function proxy(request: NextRequest) {
       pathname === '/portal/projects' || pathname === '/portal/inventory' ||
       pathname === '/portal/proposals' || pathname === '/portal/proposals/new' ||
       pathname === '/portal/developer';
-    const isDemoProposalApi = /^\/api\/public\/proposals\/[a-f0-9]{40}\/(decision|telemetry)$/i.test(pathname);
+    const isDemoProposalApi = /^\/api\/public\/proposals\/[a-f0-9]{40}\/(decision|telemetry)$/i.test(pathname) ||
+      /^\/api\/public\/proposals\/demo-[a-z0-9-]+\/telemetry$/i.test(pathname);
     const isAllowedDemo =
       pathname.startsWith('/inversionista') ||
       pathname.startsWith('/login') ||
