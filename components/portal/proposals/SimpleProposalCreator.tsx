@@ -412,6 +412,7 @@ export default function SimpleProposalCreator({
       const result = await summarizeProposalCoverMessageAction({
         projectName: project.name,
         projectDescription: project.description || project.shortDescription,
+        projectLocation: project.location,
         currentMessage: message,
       });
       if (result.success && result.text) {
@@ -433,6 +434,8 @@ export default function SimpleProposalCreator({
       const result = await summarizeProposalConceptAction({
         projectName: project.name,
         projectDescription: project.description || project.shortDescription,
+        projectLocation: project.location,
+        projectHighlights: project.highlights,
         currentPart1: storyPart1,
         currentPart2: storyPart2,
       });
@@ -1318,7 +1321,7 @@ export default function SimpleProposalCreator({
                         "group relative inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full p-[1.5px] text-[10px] font-extrabold uppercase tracking-[0.08em] shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer overflow-hidden",
                         "bg-gradient-to-r from-[#0284c7] via-[#a855f7] to-[#ec4899] hover:shadow-md hover:shadow-purple-500/15"
                       )}
-                      title="Sintetiza la descripción oficial del proyecto con IA en menos de 400 caracteres enfocado a inversionistas"
+                      title={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Genera un texto de ejemplo localmente con los datos del proyecto.' : 'Sintetiza la descripción oficial del proyecto con IA en menos de 400 caracteres enfocado a inversionistas'}
                     >
                       <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-slate-800 transition-colors group-hover:bg-slate-50">
                         {isSummarizingMessage ? (
@@ -1327,7 +1330,7 @@ export default function SimpleProposalCreator({
                             <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={"Generando…"} /></span>
                           </>
                         ) : (
-                          <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={"Rehacer con IA"} /></span>
+                            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redactar (demo)' : 'Rehacer con IA'} /></span>
                         )}
                       </span>
                     </button></UITranslationBoundary>
@@ -1347,7 +1350,7 @@ export default function SimpleProposalCreator({
                         "group relative inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full p-[1.5px] text-[10px] font-extrabold uppercase tracking-[0.08em] shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer overflow-hidden",
                         "bg-gradient-to-r from-[#0284c7] via-[#a855f7] to-[#ec4899] hover:shadow-md hover:shadow-purple-500/15"
                       )}
-                      title="Redacta con IA las dos partes del concepto para inversionistas (máx. 300 y 430 caracteres)"
+                      title={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redacta un ejemplo con datos locales del proyecto; no requiere conexión externa.' : 'Redacta con IA las dos partes del concepto para inversionistas (máx. 300 y 430 caracteres)'}
                     >
                       <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-slate-800 transition-colors group-hover:bg-slate-50">
                         {isSummarizingConcept ? (
@@ -1356,7 +1359,7 @@ export default function SimpleProposalCreator({
                             <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={"Generando…"} /></span>
                           </>
                         ) : (
-                          <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={"Rehacer con IA"} /></span>
+                            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"><LocalizedText text={process.env.NEXT_PUBLIC_APP_SCOPE === 'demo' ? 'Redactar (demo)' : 'Rehacer con IA'} /></span>
                         )}
                       </span>
                     </button></UITranslationBoundary>

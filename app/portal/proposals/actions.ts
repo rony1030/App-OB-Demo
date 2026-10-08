@@ -2009,6 +2009,7 @@ export async function resendProposalEmailAction(presentationId: number): Promise
 export async function summarizeProposalCoverMessageAction(input: {
   projectName?: string;
   projectDescription?: string;
+  projectLocation?: string;
   currentMessage?: string;
 }): Promise<{ success: boolean; text?: string; error?: string }> {
   const currentUser = await getCurrentUser().catch(() => null);
@@ -2019,6 +2020,16 @@ export async function summarizeProposalCoverMessageAction(input: {
   const sourceDescription = (input.projectDescription || input.currentMessage || '').trim();
   if (!sourceDescription) {
     return { success: false, error: 'No hay descripción disponible para resumir.' };
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const clean = sourceDescription.replace(/\s+/g, ' ').trim();
+    const location = input.projectLocation?.trim();
+    const prefix = location && !clean.toLocaleLowerCase().includes(location.toLocaleLowerCase())
+      ? `Una propuesta residencial en ${location}. `
+      : '';
+    const text = `${prefix}${clean}`.slice(0, 397).trim().replace(/[\s,;:]+$/, '') + (prefix || clean.length > 397 ? '…' : '');
+    return { success: true, text };
   }
 
   const systemInstruction = [
@@ -2119,6 +2130,8 @@ export async function summarizeProposalCoverMessageAction(input: {
 export async function summarizeProposalConceptAction(input: {
   projectName?: string;
   projectDescription?: string;
+  projectLocation?: string;
+  projectHighlights?: string[];
   currentPart1?: string;
   currentPart2?: string;
 }): Promise<{ success: boolean; part1?: string; part2?: string; error?: string }> {
@@ -2146,6 +2159,20 @@ export async function summarizeProposalConceptAction(input: {
       return t.slice(0, lastPeriod + 1).trim();
     }
     return t.slice(0, maxChars - 3).trim() + '...';
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+    const source = sourceDescription.replace(/\s+/g, ' ').trim();
+    const projectName = input.projectName?.trim();
+    const part1 = cleanAndCap(projectName ? `${projectName}: ${source}` : source, 300);
+    const location = input.projectLocation?.trim();
+    const highlight = input.projectHighlights?.find((item) => item.trim())?.trim();
+    const locationSentence = location
+      ? `Ubicado en ${location}, el proyecto puede evaluarse junto con las características descritas de su propuesta.`
+      : 'La ubicación y las características del proyecto permiten valorar su propuesta dentro del mercado residencial.';
+    const highlightSentence = highlight ? ` Entre sus atributos se encuentra ${highlight.replace(/[.!?]+$/, '').toLocaleLowerCase()}.` : '';
+    const part2 = cleanAndCap(`${locationSentence}${highlightSentence}`, 430);
+    return { success: true, part1, part2 };
   }
 
   const systemInstruction = [
