@@ -72,15 +72,12 @@ export const DEMO_PROJECT_VILLAS = {
     'Diseño bioclimático con doble altura y acabados premium',
   ],
   gallery: [
-    '/paridera/villas/galeria/01-portada.jpg',
+    '/demo-projects/villas-punta-cana.png',
     '/paridera/villas/villa-01.jpg',
     '/paridera/villas/villa-02.jpg',
     '/paridera/villas/villa-03.jpg',
     '/paridera/villas/villa-04.jpg',
     '/paridera/villas/villa-interior.jpg',
-    '/paridera/villas/galeria/02.jpg',
-    '/paridera/villas/galeria/03.jpg',
-    '/paridera/villas/galeria/04.jpg',
     '/paridera/villas/planos/masterplan.jpg',
   ],
   typologies: [

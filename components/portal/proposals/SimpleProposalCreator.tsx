@@ -510,11 +510,12 @@ export default function SimpleProposalCreator({
     });
   };
   const appliedOffer = useMemo(() => activeOffers.find((offer) => offer.id === selectedOfferId) || null, [activeOffers, selectedOfferId]);
+  const manualDiscountEnabled = canApplyManualDiscount && process.env.NEXT_PUBLIC_APP_SCOPE !== 'demo';
   const manualDiscount = useMemo(() => {
     const value = Number(manualDiscountValue);
-    if (!canApplyManualDiscount || appliedOffer || !Number.isFinite(value) || value <= 0) return null;
+    if (!manualDiscountEnabled || appliedOffer || !Number.isFinite(value) || value <= 0) return null;
     return { type: manualDiscountType, value };
-  }, [appliedOffer, canApplyManualDiscount, manualDiscountType, manualDiscountValue]);
+  }, [appliedOffer, manualDiscountEnabled, manualDiscountType, manualDiscountValue]);
   const effectiveProposalItems = useMemo(() => proposalItems.map((item) => {
     const listPrice = item.list_price || item.price;
     const discountAmount = manualDiscount
@@ -1146,7 +1147,7 @@ export default function SimpleProposalCreator({
           )}
 
           {/* SECCIÓN DESCUENTO DIRECTO */}
-          {canApplyManualDiscount && (
+          {manualDiscountEnabled && (
             <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all">
               <button
                 type="button"
