@@ -22,6 +22,8 @@ export type ActionResponse = {
   reportId?: number;
   protectionStatus?: 'pending' | 'protected' | 'conflict' | 'released' | 'existing';
   message?: string;
+  opportunityId?: number;
+  opportunityCode?: string;
 };
 
 export async function createLeadAction(formData: FormData): Promise<ActionResponse> {
@@ -721,22 +723,7 @@ export async function createOpportunityAction(
 
     const opportunityId = Date.now();
     const opportunityCode = `OPP-${opportunityId}`;
-    await updateDemoState((state) => {
-      const detail = state.contactDetails[String(contactId)] ??= { notes: [], activities: [] };
-      detail.opportunities ??= [];
-      detail.opportunities.unshift({
-        id: opportunityId,
-        publicCode: opportunityCode,
-        stage: 'new',
-        priority: 'medium',
-        projectIds: projectId ? [projectId] : [],
-        createdAt: new Date().toISOString(),
-      });
-    });
-    revalidatePath('/portal/clientes', 'layout');
-    revalidatePath('/portal/clientes');
-    revalidatePath(`/portal/clientes/${contact.publicCode}`);
-    return { success: true, message: 'Negociación creada en los datos locales del demo.' };
+    return { success: true, message: 'Negociación creada en este navegador del demo.', opportunityId, opportunityCode };
   }
 
   const supabase = await createClient();

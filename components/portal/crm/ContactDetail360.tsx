@@ -2,7 +2,7 @@
 import { UITranslationBoundary, LocalizedText } from '@/components/i18n/UITranslationBoundary';
 
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BookmarkPlus, Building2, Calendar, CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, FileText, Globe, Layers, Mail, MessageSquare, Phone, Plus, Send, Tag, Trash2, X } from 'lucide-react';
 import { cn, formatCurrency, formatPortalDate, formatPortalDateTime, formatPortalTime } from '@/lib/utils';
@@ -12,6 +12,7 @@ import LeadReportingDialog from '@/components/portal/crm/LeadReportingDialog';
 import ClientDocumentsPanel from '@/components/portal/crm/ClientDocumentsPanel';
 import ReservationPaymentPanel from '@/components/portal/crm/ReservationPaymentPanel';
 import { addContactActivityAction, addContactNoteAction, createOpportunityAction, addProjectToOpportunityAction, addUnitToOpportunityAction, removeUnitFromOpportunityAction, requestUnitReservationAction, getAvailableUnitsAction, toggleTaskCompleteAction, updateOpportunityStageAction } from '@/app/portal/crm/actions';
+import { getDemoBrowserOpportunities, saveDemoBrowserOpportunity, type DemoBrowserOpportunity } from '@/lib/demo/browser-crm-store';
 
 type Props = {
   contact: ContactDetail;
@@ -43,6 +44,11 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
   const [showNewOppModal, setShowNewOppModal] = useState(false);
   const [newOppProjectId, setNewOppProjectId] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [demoOpportunities, setDemoOpportunities] = useState<DemoBrowserOpportunity[]>([]);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') setDemoOpportunities(getDemoBrowserOpportunities());
+  }, []);
 
   // Unit selector state
   const [selectingUnitsForProject, setSelectingUnitsForProject] = useState<{ oppId: number; projectId: number; projectName: string } | null>(null);
@@ -53,7 +59,27 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
   const [reservationModal, setReservationModal] = useState<{ oppId: number; unitId: number; unitCode: string; price: number; currency: string } | null>(null);
   const [reservationNotes, setReservationNotes] = useState('');
 
-  const primaryOpp = contact.opportunities[0];
+  const activeDemoOpportunity = demoOpportunities.find((opportunity) => opportunity.contactId === contact.id);
+  const storedOpportunity = activeDemoOpportunity
+    ? contact.opportunities.find((opportunity) => opportunity.id === activeDemoOpportunity.id)
+    : undefined;
+  const primaryOpp: ContactDetail['opportunities'][number] | undefined = activeDemoOpportunity ? {
+    id: activeDemoOpportunity.id,
+    publicCode: activeDemoOpportunity.publicCode,
+    stage: activeDemoOpportunity.stage,
+    priority: activeDemoOpportunity.priority,
+    budgetMin: storedOpportunity?.budgetMin ?? null,
+    budgetMax: storedOpportunity?.budgetMax ?? null,
+    currency: storedOpportunity?.currency || 'USD',
+    objective: storedOpportunity?.objective || 'Inversión',
+    nextFollowUpAt: storedOpportunity?.nextFollowUpAt || null,
+    closedReason: storedOpportunity?.closedReason || null,
+    projects: activeDemoOpportunity.projectIds.flatMap((id) => {
+      const project = accessibleProjects.find((item) => item.id === id);
+      return project ? [{ id, name: project.name, slug: project.slug }] : [];
+    }),
+    units: storedOpportunity?.units || [],
+  } : contact.opportunities[0];
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +127,22 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
   const handleCreateOpportunity = () => {
     startTransition(async () => {
       const res = await createOpportunityAction(contact.id, newOppProjectId ? Number(newOppProjectId) : undefined);
-      if (res.success) {
+      if (res.success && res.opportunityId && res.opportunityCode && process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+        const opportunity = {
+          contactId: contact.id,
+          id: res.opportunityId,
+          publicCode: res.opportunityCode,
+          stage: 'new',
+          priority: 'medium',
+          projectIds: newOppProjectId ? [Number(newOppProjectId)] : [],
+          createdAt: new Date().toISOString(),
+        };
+        saveDemoBrowserOpportunity(opportunity);
+        setDemoOpportunities((current) => [opportunity, ...current.filter((item) => item.id !== opportunity.id)]);
+        setShowNewOppModal(false);
+        setNewOppProjectId('');
+        notify(res.message || 'Negociación creada.');
+      } else if (res.success) {
         setShowNewOppModal(false);
         setNewOppProjectId('');
         notify(res.message || 'Negociación creada.');
@@ -114,6 +155,28 @@ export default function ContactDetail360({ contact, reportTargets = [], leadRepo
 
   const handleAddProject = (oppId: number, projectId: number) => {
     startTransition(async () => {
+      if (process.env.NEXT_PUBLIC_APP_SCOPE === 'demo') {
+        const current = demoOpportunities.find((item) => item.id === oppId);
+        const original = contact.opportunities.find((item) => item.id === oppId);
+        const project = accessibleProjects.find((item) => item.id === projectId);
+        if (!project || (current?.projectIds || original?.projects.map((item) => item.id) || []).includes(projectId)) {
+          notify(project ? 'Este proyecto ya está vinculado a la negociación.' : 'El proyecto no está disponible en el demo.');
+          return;
+        }
+        const opportunity: DemoBrowserOpportunity = {
+          contactId: contact.id,
+          id: oppId,
+          publicCode: current?.publicCode || original?.publicCode || `OPP-${oppId}`,
+          stage: current?.stage || original?.stage || 'new',
+          priority: current?.priority || original?.priority || 'medium',
+          projectIds: [...(current?.projectIds || original?.projects.map((item) => item.id) || []), projectId],
+          createdAt: current?.createdAt || new Date().toISOString(),
+        };
+        saveDemoBrowserOpportunity(opportunity);
+        setDemoOpportunities((items) => [opportunity, ...items.filter((item) => item.id !== oppId)]);
+        notify('Proyecto vinculado en este navegador del demo.');
+        return;
+      }
       const res = await addProjectToOpportunityAction(oppId, projectId, contact.id);
       if (res.success) {
         notify('Proyecto vinculado.');
